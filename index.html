@@ -1,0 +1,1612 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Collage Generator</title>
+        <style>
+            :root {
+                --bg: #1e1e2e;
+                --surface: #2a2a3c;
+                --surface2: #333349;
+                --text: #e0e0e0;
+                --text2: #a0a0b8;
+                --accent: #14b8a6;
+                --accent2: #0d9488;
+                --danger: #e0556a;
+                --border: #3d3d56;
+                --radius: 8px;
+                --radius-sm: 5px;
+                --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family:
+                    "Segoe UI",
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
+                background: var(--bg);
+                color: var(--text);
+                height: 100vh;
+                display: flex;
+                overflow: hidden;
+                user-select: none;
+                -webkit-user-select: none;
+            }
+
+            /* SIDEBAR */
+            .sidebar {
+                width: 320px;
+                min-width: 320px;
+                background: var(--surface);
+                border-right: 1px solid var(--border);
+                display: flex;
+                flex-direction: column;
+                overflow-y: auto;
+                overflow-x: hidden;
+                z-index: 10;
+            }
+
+            .sidebar-section {
+                padding: 16px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .sidebar-section h3 {
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.8px;
+                color: var(--text2);
+                margin-bottom: 10px;
+                font-weight: 600;
+            }
+
+            /* Input groups */
+            .input-row {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+
+            .input-row label {
+                font-size: 13px;
+                color: var(--text2);
+                min-width: 40px;
+                font-weight: 500;
+            }
+
+            .input-row input,
+            .input-row select {
+                flex: 1;
+                background: var(--surface2);
+                border: 1px solid var(--border);
+                color: var(--text);
+                padding: 7px 10px;
+                border-radius: var(--radius-sm);
+                font-size: 13px;
+                font-family: inherit;
+                outline: none;
+                transition: border-color 0.2s;
+            }
+
+            .input-row input:focus,
+            .input-row select:focus {
+                border-color: var(--accent);
+            }
+
+            /* Buttons */
+            .btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 9px 16px;
+                border-radius: var(--radius-sm);
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                border: none;
+                font-family: inherit;
+                transition: all 0.2s;
+                white-space: nowrap;
+            }
+
+            .btn-primary {
+                background: var(--accent);
+                color: #fff;
+            }
+            .btn-primary:hover {
+                background: var(--accent2);
+            }
+
+            .btn-secondary {
+                background: var(--surface2);
+                color: var(--text);
+                border: 1px solid var(--border);
+            }
+            .btn-secondary:hover {
+                background: #3d3d56;
+            }
+
+            .btn-danger {
+                background: transparent;
+                color: var(--danger);
+                border: 1px solid var(--danger);
+            }
+            .btn-danger:hover {
+                background: var(--danger);
+                color: #fff;
+            }
+
+            .btn-sm {
+                padding: 5px 10px;
+                font-size: 11px;
+            }
+
+            .btn-block {
+                width: 100%;
+                justify-content: center;
+            }
+
+            /* Image List */
+            .image-list {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .image-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                background: var(--surface2);
+                border-radius: var(--radius);
+                padding: 7px 8px;
+                cursor: grab;
+                border: 2px solid transparent;
+                transition:
+                    border-color 0.2s,
+                    background 0.2s;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .image-item:active {
+                cursor: grabbing;
+            }
+            .image-item.dragging {
+                opacity: 0.5;
+                border-color: var(--accent);
+            }
+            .image-item.drag-over {
+                border-color: var(--accent);
+                background: #3d3d5a;
+            }
+            .image-item.selected {
+                border-color: var(--accent);
+            }
+
+            .image-item .drag-handle {
+                color: var(--text2);
+                font-size: 16px;
+                cursor: grab;
+                line-height: 1;
+                padding: 0 1px;
+                flex-shrink: 0;
+            }
+
+            .image-item .thumb {
+                width: 38px;
+                height: 38px;
+                border-radius: var(--radius-sm);
+                object-fit: cover;
+                background: var(--bg);
+                flex-shrink: 0;
+                pointer-events: none;
+            }
+
+            .image-item .info {
+                flex: 1;
+                min-width: 0;
+                overflow: hidden;
+            }
+
+            .image-item .name {
+                font-size: 12px;
+                font-weight: 500;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .image-item .priority-row {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                margin-top: 2px;
+                padding: 5px 0 4px 0;
+                min-width: 0;
+            }
+
+            .image-item .priority-row > span {
+                flex-shrink: 0;
+                font-size: 10px;
+                color: var(--text2);
+            }
+            .image-item .priority-row input[type="range"] {
+                flex: 1;
+                min-width: 0;
+                height: 6px;
+                -webkit-appearance: none;
+                appearance: none;
+                background: var(--border);
+                border-radius: 3px;
+                outline: none;
+                cursor: pointer;
+            }
+            .image-item
+                .priority-row
+                input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: var(--accent);
+                cursor: pointer;
+            }
+            .image-item .priority-row input[type="range"]::-moz-range-thumb {
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: var(--accent);
+                cursor: pointer;
+                border: none;
+            }
+            .image-item .priority-row input[type="range"]::-moz-range-track {
+                height: 6px;
+                background: var(--border);
+                border-radius: 3px;
+            }
+
+            .image-item .priority-label {
+                font-size: 10px;
+                color: var(--text2);
+                min-width: 24px;
+                text-align: right;
+                font-weight: 500;
+                flex-shrink: 0;
+            }
+
+            .image-item .rm-btn {
+                background: none;
+                border: none;
+                color: var(--text2);
+                cursor: pointer;
+                font-size: 16px;
+                padding: 2px 4px;
+                line-height: 1;
+                border-radius: 3px;
+                transition: all 0.2s;
+                flex-shrink: 0;
+            }
+            .image-item .rm-btn:hover {
+                color: var(--danger);
+                background: rgba(224, 85, 106, 0.1);
+            }
+
+            /* MAIN AREA */
+            .main {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                overflow: auto;
+                position: relative;
+            }
+
+            .main-header {
+                position: absolute;
+                top: 12px;
+                left: 50%;
+                transform: translateX(-50%);
+                font-size: 13px;
+                color: var(--text2);
+                background: var(--surface);
+                padding: 6px 14px;
+                border-radius: 20px;
+                border: 1px solid var(--border);
+                pointer-events: none;
+                z-index: 5;
+            }
+
+            /* Collage Preview */
+            .collage-container {
+                position: relative;
+                box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+                border-radius: 2px;
+                overflow: hidden;
+                background: #111;
+                cursor: default;
+            }
+
+            .collage-grid {
+                display: grid;
+                width: 100%;
+                height: 100%;
+            }
+
+            .collage-cell {
+                position: relative;
+                overflow: hidden;
+                background: #1a1a1a;
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                cursor: crosshair;
+                transition: border-color 0.15s;
+            }
+
+            .collage-cell:hover {
+                border-color: rgba(255, 255, 255, 0.2);
+            }
+
+            .collage-cell.active {
+                border-color: var(--accent) !important;
+                z-index: 2;
+                box-shadow: 0 0 0 2px var(--accent);
+            }
+
+            .collage-cell img {
+                position: absolute;
+                pointer-events: none;
+                /* Will be sized and positioned via JS */
+            }
+
+            .cell-number {
+                position: absolute;
+                top: 4px;
+                left: 6px;
+                font-size: 10px;
+                color: rgba(255, 255, 255, 0.7);
+                background: rgba(0, 0, 0, 0.55);
+                padding: 2px 6px;
+                border-radius: 3px;
+                pointer-events: none;
+                z-index: 1;
+                font-weight: 600;
+            }
+
+            /* Crop tooltip */
+            .crop-hint {
+                position: absolute;
+                bottom: 6px;
+                left: 50%;
+                transform: translateX(-50%);
+                font-size: 10px;
+                color: rgba(255, 255, 255, 0.8);
+                background: rgba(0, 0, 0, 0.6);
+                padding: 3px 8px;
+                border-radius: 3px;
+                pointer-events: none;
+                z-index: 2;
+                white-space: nowrap;
+            }
+
+            /* Empty State */
+            .empty-state {
+                text-align: center;
+                color: var(--text2);
+                padding: 40px;
+            }
+
+            .empty-state .icon {
+                font-size: 64px;
+                margin-bottom: 16px;
+                opacity: 0.5;
+            }
+
+            .empty-state p {
+                font-size: 15px;
+                margin-bottom: 4px;
+            }
+            .empty-state .sub {
+                font-size: 13px;
+                opacity: 0.7;
+            }
+
+            /* Scale info */
+            .scale-info {
+                position: absolute;
+                bottom: 8px;
+                right: 12px;
+                font-size: 11px;
+                color: var(--text2);
+                pointer-events: none;
+            }
+
+            /* Responsive */
+            @media (max-width: 768px) {
+                body {
+                    flex-direction: column;
+                }
+                .sidebar {
+                    width: 100%;
+                    min-width: 100%;
+                    max-height: 40vh;
+                    flex-shrink: 0;
+                }
+                .main {
+                    padding: 10px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-section">
+                <h3>📐 Canvas Size (pixels)</h3>
+                <div class="input-row">
+                    <label>Width</label>
+                    <input
+                        type="number"
+                        id="canvasW"
+                        value="1200"
+                        min="200"
+                        max="8000"
+                        step="10"
+                    />
+                </div>
+                <div class="input-row">
+                    <label>Height</label>
+                    <input
+                        type="number"
+                        id="canvasH"
+                        value="800"
+                        min="200"
+                        max="8000"
+                        step="10"
+                    />
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>📋 Layout</h3>
+                <div class="input-row">
+                    <select id="layoutSelect">
+                        <option value="equal-grid">Equal Grid</option>
+                        <option value="priority-grid">
+                            Priority-Weighted Grid
+                        </option>
+                        <option value="horizontal">Horizontal Strip</option>
+                        <option value="vertical">Vertical Strip</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <button class="btn btn-primary btn-block" id="importBtn">
+                    🖼️ Import Images
+                </button>
+                <input
+                    type="file"
+                    id="fileInput"
+                    accept="image/*"
+                    multiple
+                    hidden
+                />
+                <p
+                    style="
+                        font-size: 11px;
+                        color: var(--text2);
+                        margin-top: 6px;
+                        text-align: center;
+                    "
+                >
+                    Supported: JPEG, PNG, WebP, GIF, SVG
+                </p>
+            </div>
+
+            <div
+                class="sidebar-section"
+                style="flex: 1; overflow-y: auto; min-height: 0"
+            >
+                <h3>
+                    🖼️ Images
+                    <span id="imageCount" style="color: var(--text2)">(0)</span>
+                </h3>
+                <div class="image-list" id="imageList">
+                    <div class="empty-state" style="padding: 20px">
+                        <p style="font-size: 13px">No images yet</p>
+                        <p class="sub">Import images to start</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="input-row" style="margin-bottom: 8px">
+                    <label>Format</label>
+                    <select id="exportFormat">
+                        <option value="png">PNG (lossless)</option>
+                        <option value="jpeg">JPG (smaller file)</option>
+                    </select>
+                </div>
+                <button
+                    class="btn btn-secondary btn-block"
+                    id="downloadBtn"
+                    disabled
+                >
+                    ⬇️ Download Collage (PNG)
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="main" id="mainArea">
+            <div class="main-header" id="mainHeader" style="display: none">
+                Preview <span id="scaleLabel"></span>
+            </div>
+            <div class="empty-state" id="emptyState">
+                <div class="icon">🖼️</div>
+                <p>Collage Preview</p>
+                <p class="sub">Import images to see your collage here</p>
+            </div>
+            <div
+                class="collage-container"
+                id="collageContainer"
+                style="display: none"
+            >
+                <div class="collage-grid" id="collageGrid"></div>
+            </div>
+            <div class="scale-info" id="scaleInfo" style="display: none"></div>
+        </main>
+
+        <script>
+            (function () {
+                // ── State ──────────────────────────────────────────────
+                const state = {
+                    images: [], // { id, file, url, width, height, priority, cropX, cropY }
+                    canvasW: 1200,
+                    canvasH: 800,
+                    layout: "equal-grid",
+                    nextId: 1,
+                    activeCellIndex: null,
+                    draggedItemIndex: null,
+                };
+
+                // ── DOM Refs ──────────────────────────────────────────
+                const $ = (s) => document.querySelector(s);
+                const $$ = (s) => document.querySelectorAll(s);
+
+                const els = {
+                    canvasW: $("#canvasW"),
+                    canvasH: $("#canvasH"),
+                    layoutSelect: $("#layoutSelect"),
+                    importBtn: $("#importBtn"),
+                    fileInput: $("#fileInput"),
+                    imageList: $("#imageList"),
+                    imageCount: $("#imageCount"),
+                    downloadBtn: $("#downloadBtn"),
+                    mainArea: $("#mainArea"),
+                    emptyState: $("#emptyState"),
+                    collageContainer: $("#collageContainer"),
+                    collageGrid: $("#collageGrid"),
+                    mainHeader: $("#mainHeader"),
+                    scaleLabel: $("#scaleLabel"),
+                    scaleInfo: $("#scaleInfo"),
+                    exportFormat: $("#exportFormat"),
+                };
+
+                // ── Bind Inputs ───────────────────────────────────────
+                els.canvasW.addEventListener("input", () => {
+                    state.canvasW = Math.max(
+                        200,
+                        Math.min(8000, parseInt(els.canvasW.value) || 1200),
+                    );
+                    rebuildCollage();
+                });
+                els.canvasH.addEventListener("input", () => {
+                    state.canvasH = Math.max(
+                        200,
+                        Math.min(8000, parseInt(els.canvasH.value) || 800),
+                    );
+                    rebuildCollage();
+                });
+                els.layoutSelect.addEventListener("change", () => {
+                    state.layout = els.layoutSelect.value;
+                    rebuildCollage();
+                });
+                els.exportFormat.addEventListener("change", () => {
+                    const ext =
+                        els.exportFormat.value === "jpeg" ? "JPG" : "PNG";
+                    els.downloadBtn.textContent = `⬇️ Download Collage (${ext})`;
+                });
+
+                // ── Import Images ─────────────────────────────────────
+                els.importBtn.addEventListener("click", () =>
+                    els.fileInput.click(),
+                );
+                els.fileInput.addEventListener("change", handleFileImport);
+
+                function handleFileImport(e) {
+                    const files = Array.from(e.target.files);
+                    if (files.length === 0) return;
+
+                    files.forEach((file) => {
+                        if (!file.type.startsWith("image/")) return;
+                        const url = URL.createObjectURL(file);
+                        const img = new Image();
+                        img.onload = () => {
+                            state.images.push({
+                                id: state.nextId++,
+                                file: file,
+                                url: url,
+                                width: img.naturalWidth,
+                                height: img.naturalHeight,
+                                priority: 50,
+                                cropX: 50, // percentage 0-100
+                                cropY: 50, // percentage 0-100
+                            });
+                            renderImageList();
+                            rebuildCollage();
+                        };
+                        img.onerror = () => {
+                            URL.revokeObjectURL(url);
+                        };
+                        img.src = url;
+                    });
+
+                    els.fileInput.value = "";
+                }
+
+                // ── Render Image List ─────────────────────────────────
+                function renderImageList() {
+                    const list = els.imageList;
+                    list.innerHTML = "";
+
+                    if (state.images.length === 0) {
+                        list.innerHTML = `<div class="empty-state" style="padding:20px;">
+        <p style="font-size:13px;">No images yet</p>
+        <p class="sub">Import images to start</p>
+      </div>`;
+                        els.imageCount.textContent = "(0)";
+                        els.downloadBtn.disabled = true;
+                        return;
+                    }
+
+                    els.imageCount.textContent = `(${state.images.length})`;
+                    els.downloadBtn.disabled = false;
+
+                    state.images.forEach((img, index) => {
+                        const item = document.createElement("div");
+                        item.className =
+                            "image-item" +
+                            (state.activeCellIndex === index
+                                ? " selected"
+                                : "");
+                        item.draggable = true;
+                        item.dataset.index = index;
+
+                        item.innerHTML = `
+        <span class="drag-handle">⠿</span>
+        <img class="thumb" src="${img.url}" alt="">
+        <div class="info">
+          <div class="name">${img.file?.name || "Image " + img.id}</div>
+          <div class="priority-row">
+            <span style="font-size:10px;color:var(--text2);">P:</span>
+            <input type="range" min="1" max="100" value="${img.priority}" class="prio-slider">
+            <span class="priority-label">${img.priority}</span>
+          </div>
+        </div>
+        <button class="rm-btn" title="Remove">✕</button>
+      `;
+
+                        // Priority slider
+                        const slider = item.querySelector(".prio-slider");
+                        const label = item.querySelector(".priority-label");
+                        // Prevent HTML5 drag from firing on parent when using slider
+                        slider.addEventListener("mousedown", (e) => {
+                            e.stopPropagation();
+                            item.draggable = false;
+                        });
+                        slider.addEventListener(
+                            "touchstart",
+                            (e) => {
+                                e.stopPropagation();
+                                item.draggable = false;
+                            },
+                            { passive: false },
+                        );
+                        slider.addEventListener("input", (e) => {
+                            e.stopPropagation();
+                            img.priority = parseInt(slider.value);
+                            label.textContent = img.priority;
+                            rebuildCollage();
+                        });
+
+                        // Remove button
+                        item.querySelector(".rm-btn").addEventListener(
+                            "click",
+                            (e) => {
+                                e.stopPropagation();
+                                removeImage(index);
+                            },
+                        );
+
+                        // Click to select for crop adjustment
+                        item.addEventListener("click", (e) => {
+                            if (
+                                e.target.tagName === "INPUT" ||
+                                e.target.tagName === "BUTTON"
+                            )
+                                return;
+                            selectCell(index);
+                        });
+
+                        // Drag and drop reorder
+                        item.addEventListener("dragstart", handleDragStart);
+                        item.addEventListener("dragend", handleDragEnd);
+                        item.addEventListener("dragover", handleDragOver);
+                        item.addEventListener("dragleave", handleDragLeave);
+                        item.addEventListener("drop", handleDrop);
+
+                        list.appendChild(item);
+                    });
+                }
+
+                function removeImage(index) {
+                    const img = state.images[index];
+                    URL.revokeObjectURL(img.url);
+                    state.images.splice(index, 1);
+                    if (state.activeCellIndex === index)
+                        state.activeCellIndex = null;
+                    else if (state.activeCellIndex > index)
+                        state.activeCellIndex--;
+                    renderImageList();
+                    rebuildCollage();
+                }
+
+                // ── Drag & Drop Reorder ────────────────────────────────
+                function handleDragStart(e) {
+                    // Don't start drag if user is interacting with a form control
+                    if (
+                        e.target.tagName === "INPUT" ||
+                        e.target.tagName === "BUTTON" ||
+                        e.target.tagName === "SELECT" ||
+                        e.target.tagName === "TEXTAREA"
+                    ) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    state.draggedItemIndex = parseInt(this.dataset.index);
+                    this.classList.add("dragging");
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData(
+                        "text/plain",
+                        state.draggedItemIndex,
+                    );
+                }
+
+                function handleDragEnd(e) {
+                    this.classList.remove("dragging");
+                    state.draggedItemIndex = null;
+                    $$(".image-item").forEach((el) =>
+                        el.classList.remove("drag-over"),
+                    );
+                }
+
+                function handleDragOver(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    this.classList.add("drag-over");
+                }
+
+                function handleDragLeave(e) {
+                    this.classList.remove("drag-over");
+                }
+
+                function handleDrop(e) {
+                    e.preventDefault();
+                    this.classList.remove("drag-over");
+                    const fromIdx = state.draggedItemIndex;
+                    const toIdx = parseInt(this.dataset.index);
+                    if (fromIdx === null || fromIdx === toIdx) return;
+
+                    // Reorder
+                    const [moved] = state.images.splice(fromIdx, 1);
+                    state.images.splice(toIdx, 0, moved);
+
+                    // Update active cell
+                    if (state.activeCellIndex === fromIdx)
+                        state.activeCellIndex = toIdx;
+                    else if (
+                        fromIdx < state.activeCellIndex &&
+                        toIdx >= state.activeCellIndex
+                    )
+                        state.activeCellIndex--;
+                    else if (
+                        fromIdx > state.activeCellIndex &&
+                        toIdx <= state.activeCellIndex
+                    )
+                        state.activeCellIndex++;
+
+                    state.draggedItemIndex = null;
+                    renderImageList();
+                    rebuildCollage();
+                }
+
+                // ── Layout Calculations ────────────────────────────────
+                function computeLayout() {
+                    const n = state.images.length;
+                    if (n === 0) return null;
+
+                    // Read dimensions and layout from the DOM so the
+                    // current input values are always used
+                    const cw = parseInt(els.canvasW.value) || state.canvasW;
+                    const ch = parseInt(els.canvasH.value) || state.canvasH;
+                    state.canvasW = cw;
+                    state.canvasH = ch;
+                    const layout = els.layoutSelect.value;
+                    state.layout = layout;
+
+                    // Each cell: { x, y, w, h } in canvas pixels
+                    let cells = [];
+
+                    if (layout === "equal-grid") {
+                        // Find best grid for equal areas
+                        const { rows, cols } = bestGrid(n, cw, ch);
+                        const cellW = cw / cols;
+                        const cellH = ch / rows;
+                        for (let i = 0; i < n; i++) {
+                            const row = Math.floor(i / cols);
+                            const col = i % cols;
+                            cells.push({
+                                x: col * cellW,
+                                y: row * cellH,
+                                w: cellW,
+                                h: cellH,
+                            });
+                        }
+                    } else if (layout === "priority-grid") {
+                        // Distribute space by priority using treemap-like approach
+                        cells = priorityGridLayout(n, cw, ch);
+                    } else if (layout === "horizontal") {
+                        // All in one row, widths proportional to priority
+                        const totalPriority = state.images.reduce(
+                            (s, img) => s + img.priority,
+                            0,
+                        );
+                        let x = 0;
+                        for (let i = 0; i < n; i++) {
+                            const frac =
+                                state.images[i].priority / totalPriority;
+                            const w = frac * cw;
+                            cells.push({ x, y: 0, w, h: ch });
+                            x += w;
+                        }
+                        // Fix rounding gaps
+                        if (cells.length > 0)
+                            cells[cells.length - 1].w =
+                                cw - cells[cells.length - 1].x;
+                    } else if (layout === "vertical") {
+                        const totalPriority = state.images.reduce(
+                            (s, img) => s + img.priority,
+                            0,
+                        );
+                        let y = 0;
+                        for (let i = 0; i < n; i++) {
+                            const frac =
+                                state.images[i].priority / totalPriority;
+                            const h = frac * ch;
+                            cells.push({ x: 0, y, w: cw, h });
+                            y += h;
+                        }
+                        if (cells.length > 0)
+                            cells[cells.length - 1].h =
+                                ch - cells[cells.length - 1].y;
+                    }
+
+                    return cells;
+                }
+
+                function bestGrid(n, cw, ch) {
+                    // Compute average image aspect ratio for better cell matching
+                    let avgImgAspect = 1;
+                    if (state.images.length > 0) {
+                        const aspects = state.images.map(
+                            (img) => img.width / Math.max(img.height, 1),
+                        );
+                        avgImgAspect =
+                            aspects.reduce((a, b) => a + b, 0) / aspects.length;
+                    }
+
+                    let bestRows = 1,
+                        bestCols = n;
+                    let bestScore = Infinity;
+
+                    for (let rows = 1; rows <= n; rows++) {
+                        const cols = Math.ceil(n / rows);
+                        const cellAspect = cw / cols / (ch / rows);
+
+                        // Score: prefer layouts where cell aspect matches average image aspect
+                        // and where the grid is well-filled
+                        const emptyCells = rows * cols - n;
+                        const aspectPenalty = Math.abs(
+                            Math.log(Math.max(cellAspect / avgImgAspect, 0.01)),
+                        );
+                        const emptyPenalty = emptyCells / (rows * cols);
+
+                        const score = aspectPenalty * 10 + emptyPenalty * 5;
+                        if (score < bestScore) {
+                            bestScore = score;
+                            bestRows = rows;
+                            bestCols = cols;
+                        }
+                    }
+
+                    return { rows: bestRows, cols: bestCols };
+                }
+
+                function priorityGridLayout(n, cw, ch) {
+                    // Distribute area proportionally to priority, preserving image order
+                    const totalPriority = state.images.reduce(
+                        (s, img) => s + img.priority,
+                        0,
+                    );
+                    const totalArea = cw * ch;
+                    const items = state.images.map((img, i) => ({
+                        area: (img.priority / totalPriority) * totalArea,
+                        idx: i,
+                    }));
+
+                    const cells = new Array(n);
+                    squarify(items, 0, 0, cw, ch, cells);
+                    return cells;
+                }
+
+                // Recursive ordered treemap: splits the rectangle to optimize cell aspect ratios
+                // while preserving the original item order.
+                function squarify(items, x, y, w, h, out) {
+                    if (items.length === 0) return;
+                    if (items.length === 1) {
+                        out[items[0].idx] = { x, y, w, h };
+                        return;
+                    }
+
+                    const totalArea = items.reduce((s, it) => s + it.area, 0);
+                    if (totalArea <= 0) return;
+
+                    const rectAspect = w / h;
+
+                    // Find the best split point that optimizes aspect ratios of the two sub-rectangles
+                    let bestSplit = 1;
+                    let bestScore = Infinity;
+                    let runningSum = 0;
+
+                    for (let i = 0; i < items.length - 1; i++) {
+                        runningSum += items[i].area;
+                        const frac = runningSum / totalArea;
+
+                        let score;
+                        if (rectAspect >= 1) {
+                            // Split vertically: left gets frac*width, right gets (1-frac)*width
+                            const leftAspect = (w * frac) / h;
+                            const rightAspect = (w * (1 - frac)) / h;
+                            score =
+                                Math.abs(Math.log(Math.max(leftAspect, 0.01))) +
+                                Math.abs(Math.log(Math.max(rightAspect, 0.01)));
+                        } else {
+                            // Split horizontally: top gets frac*height, bottom gets (1-frac)*height
+                            const topAspect = w / (h * frac);
+                            const bottomAspect = w / (h * (1 - frac));
+                            score =
+                                Math.abs(Math.log(Math.max(topAspect, 0.01))) +
+                                Math.abs(
+                                    Math.log(Math.max(bottomAspect, 0.01)),
+                                );
+                        }
+
+                        if (score < bestScore) {
+                            bestScore = score;
+                            bestSplit = i + 1;
+                        }
+                    }
+
+                    const leftItems = items.slice(0, bestSplit);
+                    const rightItems = items.slice(bestSplit);
+                    const leftSum = leftItems.reduce((s, it) => s + it.area, 0);
+                    const frac = leftSum / totalArea;
+
+                    if (rectAspect >= 1) {
+                        squarify(leftItems, x, y, w * frac, h, out);
+                        squarify(
+                            rightItems,
+                            x + w * frac,
+                            y,
+                            w * (1 - frac),
+                            h,
+                            out,
+                        );
+                    } else {
+                        squarify(leftItems, x, y, w, h * frac, out);
+                        squarify(
+                            rightItems,
+                            x,
+                            y + h * frac,
+                            w,
+                            h * (1 - frac),
+                            out,
+                        );
+                    }
+                }
+
+                // ── Build Collage Preview ──────────────────────────────
+                function rebuildCollage() {
+                    const n = state.images.length;
+
+                    if (n === 0) {
+                        els.emptyState.style.display = "";
+                        els.collageContainer.style.display = "none";
+                        els.mainHeader.style.display = "none";
+                        els.scaleInfo.style.display = "none";
+                        els.downloadBtn.disabled = true;
+                        return;
+                    }
+
+                    els.emptyState.style.display = "none";
+                    els.collageContainer.style.display = "";
+                    els.mainHeader.style.display = "";
+                    els.scaleInfo.style.display = "";
+                    els.downloadBtn.disabled = false;
+
+                    const cells = computeLayout();
+                    if (!cells) return;
+
+                    // Determine display scale to fit in viewport
+                    const maxW = els.mainArea.clientWidth - 40;
+                    const maxH = els.mainArea.clientHeight - 60;
+                    const scale = Math.min(
+                        1,
+                        maxW / state.canvasW,
+                        maxH / state.canvasH,
+                    );
+
+                    els.collageContainer.style.width =
+                        state.canvasW * scale + "px";
+                    els.collageContainer.style.height =
+                        state.canvasH * scale + "px";
+                    els.scaleLabel.textContent =
+                        scale < 0.99
+                            ? `(${Math.round(scale * 100)}% scale)`
+                            : "";
+                    els.scaleInfo.textContent = `${state.canvasW}×${state.canvasH}px`;
+
+                    // Build grid using absolute positioning for precise cell placement
+                    const grid = els.collageGrid;
+                    grid.innerHTML = "";
+                    grid.style.position = "relative";
+                    grid.style.width = "100%";
+                    grid.style.height = "100%";
+
+                    cells.forEach((cell, i) => {
+                        const img = state.images[i];
+                        const cellEl = document.createElement("div");
+                        cellEl.className =
+                            "collage-cell" +
+                            (state.activeCellIndex === i ? " active" : "");
+                        cellEl.style.position = "absolute";
+                        cellEl.style.left =
+                            (cell.x / state.canvasW) * 100 + "%";
+                        cellEl.style.top = (cell.y / state.canvasH) * 100 + "%";
+                        cellEl.style.width =
+                            (cell.w / state.canvasW) * 100 + "%";
+                        cellEl.style.height =
+                            (cell.h / state.canvasH) * 100 + "%";
+                        cellEl.dataset.index = i;
+
+                        // Image element
+                        const imgEl = document.createElement("img");
+                        imgEl.src = img.url;
+                        imgEl.draggable = false;
+
+                        // Calculate cover fit
+                        const cellAspect = cell.w / cell.h;
+                        const imgAspect = img.width / img.height;
+
+                        let imgW, imgH;
+                        if (imgAspect > cellAspect) {
+                            // Image is wider -> match height, overflow horizontally
+                            imgH = 100; // percentage of cell height
+                            imgW =
+                                cellAspect > 0
+                                    ? (imgAspect / cellAspect) * 100
+                                    : 100;
+                        } else {
+                            // Image is taller -> match width, overflow vertically
+                            imgW = 100;
+                            imgH =
+                                imgAspect > 0
+                                    ? (cellAspect / imgAspect) * 100
+                                    : 100;
+                        }
+
+                        imgEl.style.width = imgW + "%";
+                        imgEl.style.height = imgH + "%";
+                        imgEl.style.position = "absolute";
+
+                        // Apply crop offset
+                        updateImagePosition(imgEl, img, imgW, imgH);
+
+                        cellEl.appendChild(imgEl);
+
+                        // Number badge
+                        const badge = document.createElement("span");
+                        badge.className = "cell-number";
+                        badge.textContent = i + 1;
+                        cellEl.appendChild(badge);
+
+                        // Crop hint — arrow matches the draggable direction
+                        if (Math.abs(imgAspect - cellAspect) > 0.01) {
+                            const hint = document.createElement("span");
+                            hint.className = "crop-hint";
+                            hint.textContent =
+                                imgAspect > cellAspect
+                                    ? "↔ Drag to adjust crop"
+                                    : "↕ Drag to adjust crop";
+                            hint.style.display = "none";
+                            cellEl.appendChild(hint);
+                        }
+
+                        // Click to select
+                        cellEl.addEventListener("click", (e) => {
+                            selectCell(i);
+                        });
+
+                        // Drag to adjust crop
+                        cellEl.addEventListener("mousedown", (e) =>
+                            onCropMouseDown(e, cellEl, i, imgW, imgH),
+                        );
+                        cellEl.addEventListener(
+                            "touchstart",
+                            (e) => onCropTouchStart(e, cellEl, i, imgW, imgH),
+                            { passive: false },
+                        );
+
+                        // Show hint on hover when selected
+                        cellEl.addEventListener("mouseenter", () => {
+                            const hint = cellEl.querySelector(".crop-hint");
+                            if (hint && state.activeCellIndex === i)
+                                hint.style.display = "";
+                        });
+                        cellEl.addEventListener("mouseleave", () => {
+                            const hint = cellEl.querySelector(".crop-hint");
+                            if (hint) hint.style.display = "none";
+                        });
+
+                        grid.appendChild(cellEl);
+                    });
+                }
+
+                function updateImagePosition(
+                    imgEl,
+                    imgData,
+                    imgWPercent,
+                    imgHPercent,
+                ) {
+                    // cropX and cropY are 0-100 representing the position
+                    // 50 = centered, 0 = left/top edge, 100 = right/bottom edge
+                    const ox = (imgWPercent - 100) * (imgData.cropX / 100);
+                    const oy = (imgHPercent - 100) * (imgData.cropY / 100);
+                    imgEl.style.left = -ox + "%";
+                    imgEl.style.top = -oy + "%";
+                }
+
+                function selectCell(index) {
+                    state.activeCellIndex =
+                        state.activeCellIndex === index ? null : index;
+                    // Re-render to show active state and hints
+                    rebuildCollage();
+                    renderImageList();
+                }
+
+                // ── Crop Dragging ──────────────────────────────────────
+                function onCropMouseDown(e, cellEl, index, imgW, imgH) {
+                    if (e.button !== 0) return; // left click only
+
+                    const imgData = state.images[index];
+                    if (!imgData) return;
+
+                    state.activeCellIndex = index;
+                    cellEl.classList.add("active");
+                    const hint = cellEl.querySelector(".crop-hint");
+                    if (hint) hint.style.display = "";
+
+                    const startX = e.clientX;
+                    const startY = e.clientY;
+                    const startCropX = imgData.cropX;
+                    const startCropY = imgData.cropY;
+                    const rect = cellEl.getBoundingClientRect();
+
+                    // Determine which axis can be dragged
+                    const cellAspect = rect.width / rect.height;
+                    const imgAspect = imgData.width / imgData.height;
+                    const canDragX = imgAspect > cellAspect + 0.01;
+                    const canDragY = imgAspect < cellAspect - 0.01;
+                    const canDragBoth =
+                        Math.abs(imgAspect - cellAspect) <= 0.01;
+
+                    // If image fits perfectly, no crop dragging needed
+                    if (!canDragX && !canDragY && !canDragBoth) return;
+
+                    function onMove(e) {
+                        const dx = e.clientX - startX;
+                        const dy = e.clientY - startY;
+
+                        let newCropX = startCropX;
+                        let newCropY = startCropY;
+
+                        if (canDragX || canDragBoth) {
+                            // Convert pixel delta to percentage delta
+                            // Subtract so dragging right moves image right (reveals left)
+                            const overflowPx = rect.width * (imgW / 100 - 1);
+                            if (overflowPx > 0.1) {
+                                const deltaPercent = (dx / overflowPx) * 100;
+                                newCropX = Math.max(
+                                    0,
+                                    Math.min(100, startCropX - deltaPercent),
+                                );
+                            }
+                        }
+
+                        if (canDragY || canDragBoth) {
+                            const overflowPx = rect.height * (imgH / 100 - 1);
+                            if (overflowPx > 0.1) {
+                                const deltaPercent = (dy / overflowPx) * 100;
+                                newCropY = Math.max(
+                                    0,
+                                    Math.min(100, startCropY - deltaPercent),
+                                );
+                            }
+                        }
+
+                        imgData.cropX = newCropX;
+                        imgData.cropY = newCropY;
+
+                        const imgEl = cellEl.querySelector("img");
+                        if (imgEl)
+                            updateImagePosition(imgEl, imgData, imgW, imgH);
+
+                        // Update slider in sidebar if visible
+                        renderImageListQuick();
+                    }
+
+                    function onUp() {
+                        document.removeEventListener("mousemove", onMove);
+                        document.removeEventListener("mouseup", onUp);
+                        document.body.style.cursor = "";
+                        if (hint) hint.style.display = "none";
+                        // Rebuild to sync everything
+                        rebuildCollage();
+                        renderImageList();
+                    }
+
+                    document.addEventListener("mousemove", onMove);
+                    document.addEventListener("mouseup", onUp);
+                    document.body.style.cursor =
+                        canDragX && canDragY
+                            ? "move"
+                            : canDragX
+                              ? "ew-resize"
+                              : "ns-resize";
+                    e.preventDefault();
+                }
+
+                function onCropTouchStart(e, cellEl, index, imgW, imgH) {
+                    if (e.touches.length !== 1) return;
+                    const touch = e.touches[0];
+
+                    const imgData = state.images[index];
+                    if (!imgData) return;
+
+                    state.activeCellIndex = index;
+                    cellEl.classList.add("active");
+
+                    const startX = touch.clientX;
+                    const startY = touch.clientY;
+                    const startCropX = imgData.cropX;
+                    const startCropY = imgData.cropY;
+                    const rect = cellEl.getBoundingClientRect();
+
+                    const cellAspect = rect.width / rect.height;
+                    const imgAspect = imgData.width / imgData.height;
+                    const canDragX = imgAspect > cellAspect + 0.01;
+                    const canDragY = imgAspect < cellAspect - 0.01;
+                    const canDragBoth =
+                        Math.abs(imgAspect - cellAspect) <= 0.01;
+
+                    if (!canDragX && !canDragY && !canDragBoth) return;
+
+                    function onMove(ev) {
+                        const t = ev.touches[0];
+                        const dx = t.clientX - startX;
+                        const dy = t.clientY - startY;
+
+                        let newCropX = startCropX;
+                        let newCropY = startCropY;
+
+                        if (canDragX || canDragBoth) {
+                            const overflowPx = rect.width * (imgW / 100 - 1);
+                            if (overflowPx > 0.1) {
+                                newCropX = Math.max(
+                                    0,
+                                    Math.min(
+                                        100,
+                                        startCropX - (dx / overflowPx) * 100,
+                                    ),
+                                );
+                            }
+                        }
+                        if (canDragY || canDragBoth) {
+                            const overflowPx = rect.height * (imgH / 100 - 1);
+                            if (overflowPx > 0.1) {
+                                newCropY = Math.max(
+                                    0,
+                                    Math.min(
+                                        100,
+                                        startCropY - (dy / overflowPx) * 100,
+                                    ),
+                                );
+                            }
+                        }
+
+                        imgData.cropX = newCropX;
+                        imgData.cropY = newCropY;
+
+                        const imgEl = cellEl.querySelector("img");
+                        if (imgEl)
+                            updateImagePosition(imgEl, imgData, imgW, imgH);
+                        renderImageListQuick();
+                    }
+
+                    function onEnd() {
+                        document.removeEventListener("touchmove", onMove);
+                        document.removeEventListener("touchend", onEnd);
+                        rebuildCollage();
+                        renderImageList();
+                    }
+
+                    document.addEventListener("touchmove", onMove, {
+                        passive: false,
+                    });
+                    document.addEventListener("touchend", onEnd);
+                    e.preventDefault();
+                }
+
+                // Quick update of image list sliders without full rebuild
+                function renderImageListQuick() {
+                    const items = $$(".image-item");
+                    items.forEach((item, i) => {
+                        if (i >= state.images.length) return;
+                        const label = item.querySelector(".priority-label");
+                        const slider = item.querySelector(".prio-slider");
+                        if (label) label.textContent = state.images[i].priority;
+                        if (slider) slider.value = state.images[i].priority;
+                    });
+                }
+
+                // ── Download ───────────────────────────────────────────
+                els.downloadBtn.addEventListener("click", downloadCollage);
+
+                function downloadCollage() {
+                    const n = state.images.length;
+                    if (n === 0) return;
+
+                    const cells = computeLayout();
+                    if (!cells) return;
+
+                    const cw = state.canvasW;
+                    const ch = state.canvasH;
+
+                    // Show loading state
+                    const origText = els.downloadBtn.textContent;
+                    els.downloadBtn.textContent = "⏳ Rendering...";
+                    els.downloadBtn.disabled = true;
+
+                    const canvas = document.createElement("canvas");
+                    canvas.width = cw;
+                    canvas.height = ch;
+                    const ctx = canvas.getContext("2d");
+
+                    // Background
+                    ctx.fillStyle = "#111111";
+                    ctx.fillRect(0, 0, cw, ch);
+
+                    // Load and draw all images
+                    let loaded = 0;
+                    const imageObjects = [];
+
+                    state.images.forEach((imgData, i) => {
+                        const img = new Image();
+                        img.crossOrigin = "anonymous";
+                        img.onload = () => {
+                            imageObjects[i] = img;
+                            loaded++;
+                            if (loaded === n) drawAll();
+                        };
+                        img.onerror = () => {
+                            loaded++;
+                            if (loaded === n) drawAll();
+                        };
+                        img.src = imgData.url;
+                    });
+
+                    function drawAll() {
+                        cells.forEach((cell, i) => {
+                            const img = imageObjects[i];
+                            if (!img) return;
+
+                            const cellAspect = cell.w / cell.h;
+                            const imgAspect =
+                                img.naturalWidth / img.naturalHeight;
+
+                            let sx, sy, sw, sh;
+
+                            if (imgAspect > cellAspect) {
+                                const drawW = cell.h * imgAspect;
+                                sw = img.naturalWidth * (cell.w / drawW);
+                                sh = img.naturalHeight;
+                                sx =
+                                    (img.naturalWidth - sw) *
+                                    (state.images[i].cropX / 100);
+                                sy = 0;
+                            } else {
+                                const drawH = cell.w / imgAspect;
+                                sw = img.naturalWidth;
+                                sh = img.naturalHeight * (cell.h / drawH);
+                                sx = 0;
+                                sy =
+                                    (img.naturalHeight - sh) *
+                                    (state.images[i].cropY / 100);
+                            }
+
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.rect(cell.x, cell.y, cell.w, cell.h);
+                            ctx.clip();
+                            ctx.drawImage(
+                                img,
+                                sx,
+                                sy,
+                                sw,
+                                sh,
+                                cell.x,
+                                cell.y,
+                                cell.w,
+                                cell.h,
+                            );
+                            ctx.restore();
+
+                            // Cell border
+                            ctx.strokeStyle = "rgba(255,255,255,0.08)";
+                            ctx.lineWidth = 1;
+                            ctx.strokeRect(cell.x, cell.y, cell.w, cell.h);
+                        });
+
+                        // Trigger download
+                        const fmt = els.exportFormat.value;
+                        const mime =
+                            fmt === "jpeg" ? "image/jpeg" : "image/png";
+                        const ext = fmt === "jpeg" ? "jpg" : "png";
+                        const quality = fmt === "jpeg" ? 0.92 : undefined;
+                        canvas.toBlob(
+                            (blob) => {
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = `collage_${cw}x${ch}.${ext}`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+
+                                // Restore button
+                                els.downloadBtn.textContent = origText;
+                                els.downloadBtn.disabled = false;
+                            },
+                            mime,
+                            quality,
+                        );
+                    }
+                }
+
+                // ── Keyboard Shortcuts ────────────────────────────────
+                document.addEventListener("keydown", (e) => {
+                    if (
+                        e.target.tagName === "INPUT" ||
+                        e.target.tagName === "SELECT"
+                    )
+                        return;
+
+                    if (e.key === "Escape") {
+                        state.activeCellIndex = null;
+                        rebuildCollage();
+                        renderImageList();
+                    }
+
+                    // Arrow keys move the image in the pressed direction
+                    if (
+                        state.activeCellIndex !== null &&
+                        state.images[state.activeCellIndex]
+                    ) {
+                        const img = state.images[state.activeCellIndex];
+                        const step = e.shiftKey ? 5 : 1;
+                        // ArrowRight → image moves right → reveals more of left side
+                        if (e.key === "ArrowRight") {
+                            img.cropX = Math.max(0, img.cropX - step);
+                            rebuildCollage();
+                            e.preventDefault();
+                        }
+                        // ArrowLeft → image moves left → reveals more of right side
+                        if (e.key === "ArrowLeft") {
+                            img.cropX = Math.min(100, img.cropX + step);
+                            rebuildCollage();
+                            e.preventDefault();
+                        }
+                        // ArrowDown → image moves down → reveals more of top
+                        if (e.key === "ArrowDown") {
+                            img.cropY = Math.max(0, img.cropY - step);
+                            rebuildCollage();
+                            e.preventDefault();
+                        }
+                        // ArrowUp → image moves up → reveals more of bottom
+                        if (e.key === "ArrowUp") {
+                            img.cropY = Math.min(100, img.cropY + step);
+                            rebuildCollage();
+                            e.preventDefault();
+                        }
+                        if (e.key === "r" || e.key === "R") {
+                            img.cropX = 50;
+                            img.cropY = 50;
+                            rebuildCollage();
+                            e.preventDefault();
+                        }
+                    }
+                });
+
+                // ── Restore draggable after slider interaction ────────
+                document.addEventListener("mouseup", () => {
+                    $$(".image-item").forEach((el) => (el.draggable = true));
+                });
+                document.addEventListener("touchend", () => {
+                    $$(".image-item").forEach((el) => (el.draggable = true));
+                });
+
+                // ── Window Resize ──────────────────────────────────────
+                window.addEventListener("resize", () => {
+                    if (state.images.length > 0) rebuildCollage();
+                });
+
+                // ── Initial Render ─────────────────────────────────────
+                renderImageList();
+                rebuildCollage();
+
+                console.log("🖼️ Collage Generator ready!");
+                console.log("  - Import images to get started");
+                console.log("  - Drag & drop to reorder images");
+                console.log("  - Use priority sliders to control image sizes");
+                console.log(
+                    "  - Click a cell in the collage, then drag to adjust crop",
+                );
+                console.log("  - Arrow keys for fine crop adjustment");
+                console.log("  - Press Escape to deselect");
+            })();
+        </script>
+    </body>
+</html>
