@@ -1706,6 +1706,10 @@
                 renderImageList();
                 rebuildCollage();
 
+                // Sync button text with the selected export format (in case
+                // the browser restored a non-default selection on reload)
+                els.exportFormat.dispatchEvent(new Event("change"));
+
                 console.log("[Quilt] ready!");
                 console.log("  - Import images to get started");
                 console.log("  - Drag & drop to reorder images");
