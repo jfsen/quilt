@@ -139,6 +139,26 @@
                 font-weight: 700;
             }
 
+            .clear-all-btn {
+                background: none;
+                border: none;
+                color: var(--text3);
+                font-size: 10px;
+                font-weight: 500;
+                font-family: inherit;
+                cursor: pointer;
+                padding: 2px 6px;
+                border-radius: 4px;
+                margin-left: auto;
+                transition: all var(--transition);
+                letter-spacing: 0.3px;
+                text-transform: none;
+            }
+            .clear-all-btn:hover {
+                color: var(--danger);
+                background: rgba(251, 113, 133, 0.08);
+            }
+
             /* ── Input Groups ────────────────────────────────────── */
             .input-row {
                 display: flex;
@@ -846,6 +866,14 @@
                     </svg>
                     Images
                     <span id="imageCount" style="color: var(--text2)">(0)</span>
+                    <button
+                        id="clearAllBtn"
+                        class="clear-all-btn"
+                        title="Remove all images"
+                        style="display: none"
+                    >
+                        Clear all
+                    </button>
                 </h3>
                 <div class="image-list" id="imageList">
                     <div class="empty-state" style="padding: 24px">
@@ -1043,6 +1071,7 @@
                     fileInput: $("#fileInput"),
                     imageList: $("#imageList"),
                     imageCount: $("#imageCount"),
+                    clearAllBtn: $("#clearAllBtn"),
                     downloadBtn: $("#downloadBtn"),
                     mainArea: $("#mainArea"),
                     emptyState: $("#emptyState"),
@@ -1083,6 +1112,7 @@
                 els.importBtn.addEventListener("click", () =>
                     els.fileInput.click(),
                 );
+                els.clearAllBtn.addEventListener("click", removeAllImages);
                 els.fileInput.addEventListener("change", handleFileImport);
 
                 function handleFileImport(e) {
@@ -1128,11 +1158,13 @@
       </div>`;
                         els.imageCount.textContent = "(0)";
                         els.downloadBtn.disabled = true;
+                        els.clearAllBtn.style.display = "none";
                         return;
                     }
 
                     els.imageCount.textContent = `(${state.images.length})`;
                     els.downloadBtn.disabled = false;
+                    els.clearAllBtn.style.display = "";
 
                     state.images.forEach((img, index) => {
                         const item = document.createElement("div");
@@ -1219,6 +1251,14 @@
                         state.activeCellIndex = null;
                     else if (state.activeCellIndex > index)
                         state.activeCellIndex--;
+                    renderImageList();
+                    rebuildCollage();
+                }
+
+                function removeAllImages() {
+                    state.images.forEach((img) => URL.revokeObjectURL(img.url));
+                    state.images = [];
+                    state.activeCellIndex = null;
                     renderImageList();
                     rebuildCollage();
                 }
