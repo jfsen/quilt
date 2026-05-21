@@ -1642,7 +1642,7 @@
                         state.images[state.activeCellIndex]
                     ) {
                         const img = state.images[state.activeCellIndex];
-                        const step = e.shiftKey ? 5 : 1;
+                        const step = e.shiftKey ? 5 : 5;
                         // ArrowRight → image moves right → reveals more of left side
                         if (e.key === "ArrowRight") {
                             img.cropX = Math.max(0, img.cropX - step);
