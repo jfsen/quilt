@@ -1323,11 +1323,11 @@
 
                         // Drag to adjust crop
                         cellEl.addEventListener("mousedown", (e) =>
-                            onCropMouseDown(e, cellEl, i, imgW, imgH),
+                            startCrop(e, cellEl, i, imgW, imgH),
                         );
                         cellEl.addEventListener(
                             "touchstart",
-                            (e) => onCropTouchStart(e, cellEl, i, imgW, imgH),
+                            (e) => startCrop(e, cellEl, i, imgW, imgH),
                             { passive: false },
                         );
 
@@ -1369,109 +1369,33 @@
                 }
 
                 // ── Crop Dragging ──────────────────────────────────────
-                function onCropMouseDown(e, cellEl, index, imgW, imgH) {
-                    if (e.button !== 0) return; // left click only
+                // ── Unified crop handler (mouse + touch) ─────────────
+                function startCrop(e, cellEl, index, imgW, imgH) {
+                    if (e.type === "mousedown" && e.button !== 0) return;
+                    if (e.type === "touchstart" && e.touches.length !== 1)
+                        return;
+
+                    const isTouch = e.type === "touchstart";
+                    const getPt = (ev) =>
+                        isTouch
+                            ? {
+                                  x: ev.touches[0].clientX,
+                                  y: ev.touches[0].clientY,
+                              }
+                            : { x: ev.clientX, y: ev.clientY };
 
                     const imgData = state.images[index];
                     if (!imgData) return;
 
                     state.activeCellIndex = index;
                     cellEl.classList.add("active");
+
                     const hint = cellEl.querySelector(".crop-hint");
-                    if (hint) hint.style.display = "";
+                    if (!isTouch && hint) hint.style.display = "";
 
-                    const startX = e.clientX;
-                    const startY = e.clientY;
-                    const startCropX = imgData.cropX;
-                    const startCropY = imgData.cropY;
-                    const rect = cellEl.getBoundingClientRect();
-
-                    // Determine which axis can be dragged
-                    const cellAspect = rect.width / rect.height;
-                    const imgAspect = imgData.width / imgData.height;
-                    const canDragX = imgAspect > cellAspect + 0.01;
-                    const canDragY = imgAspect < cellAspect - 0.01;
-                    const canDragBoth =
-                        Math.abs(imgAspect - cellAspect) <= 0.01;
-
-                    // If image fits perfectly, no crop dragging needed
-                    if (!canDragX && !canDragY && !canDragBoth) return;
-
-                    function onMove(e) {
-                        const dx = e.clientX - startX;
-                        const dy = e.clientY - startY;
-
-                        let newCropX = startCropX;
-                        let newCropY = startCropY;
-
-                        if (canDragX || canDragBoth) {
-                            // Convert pixel delta to percentage delta
-                            // Subtract so dragging right moves image right (reveals left)
-                            const overflowPx = rect.width * (imgW / 100 - 1);
-                            if (overflowPx > 0.1) {
-                                const deltaPercent = (dx / overflowPx) * 100;
-                                newCropX = Math.max(
-                                    0,
-                                    Math.min(100, startCropX - deltaPercent),
-                                );
-                            }
-                        }
-
-                        if (canDragY || canDragBoth) {
-                            const overflowPx = rect.height * (imgH / 100 - 1);
-                            if (overflowPx > 0.1) {
-                                const deltaPercent = (dy / overflowPx) * 100;
-                                newCropY = Math.max(
-                                    0,
-                                    Math.min(100, startCropY - deltaPercent),
-                                );
-                            }
-                        }
-
-                        imgData.cropX = newCropX;
-                        imgData.cropY = newCropY;
-
-                        const imgEl = cellEl.querySelector("img");
-                        if (imgEl)
-                            updateImagePosition(imgEl, imgData, imgW, imgH);
-
-                        // Update slider in sidebar if visible
-                        renderImageListQuick();
-                    }
-
-                    function onUp() {
-                        document.removeEventListener("mousemove", onMove);
-                        document.removeEventListener("mouseup", onUp);
-                        document.body.style.cursor = "";
-                        if (hint) hint.style.display = "none";
-                        // Rebuild to sync everything
-                        rebuildCollage();
-                        renderImageList();
-                    }
-
-                    document.addEventListener("mousemove", onMove);
-                    document.addEventListener("mouseup", onUp);
-                    document.body.style.cursor =
-                        canDragX && canDragY
-                            ? "move"
-                            : canDragX
-                              ? "ew-resize"
-                              : "ns-resize";
-                    e.preventDefault();
-                }
-
-                function onCropTouchStart(e, cellEl, index, imgW, imgH) {
-                    if (e.touches.length !== 1) return;
-                    const touch = e.touches[0];
-
-                    const imgData = state.images[index];
-                    if (!imgData) return;
-
-                    state.activeCellIndex = index;
-                    cellEl.classList.add("active");
-
-                    const startX = touch.clientX;
-                    const startY = touch.clientY;
+                    const pt = getPt(e);
+                    const startX = pt.x;
+                    const startY = pt.y;
                     const startCropX = imgData.cropX;
                     const startCropY = imgData.cropY;
                     const rect = cellEl.getBoundingClientRect();
@@ -1486,9 +1410,9 @@
                     if (!canDragX && !canDragY && !canDragBoth) return;
 
                     function onMove(ev) {
-                        const t = ev.touches[0];
-                        const dx = t.clientX - startX;
-                        const dy = t.clientY - startY;
+                        const p = getPt(ev);
+                        const dx = p.x - startX;
+                        const dy = p.y - startY;
 
                         let newCropX = startCropX;
                         let newCropY = startCropY;
@@ -1527,17 +1451,37 @@
                         renderImageListQuick();
                     }
 
-                    function onEnd() {
-                        document.removeEventListener("touchmove", onMove);
-                        document.removeEventListener("touchend", onEnd);
+                    function onUp() {
+                        const moveType = isTouch ? "touchmove" : "mousemove";
+                        const upType = isTouch ? "touchend" : "mouseup";
+                        document.removeEventListener(moveType, onMove);
+                        document.removeEventListener(upType, onUp);
+                        if (!isTouch) {
+                            document.body.style.cursor = "";
+                            if (hint) hint.style.display = "none";
+                        }
                         rebuildCollage();
                         renderImageList();
                     }
 
-                    document.addEventListener("touchmove", onMove, {
-                        passive: false,
-                    });
-                    document.addEventListener("touchend", onEnd);
+                    document.addEventListener(
+                        isTouch ? "touchmove" : "mousemove",
+                        onMove,
+                        isTouch ? { passive: false } : undefined,
+                    );
+                    document.addEventListener(
+                        isTouch ? "touchend" : "mouseup",
+                        onUp,
+                    );
+
+                    if (!isTouch) {
+                        document.body.style.cursor =
+                            canDragX && canDragY
+                                ? "move"
+                                : canDragX
+                                  ? "ew-resize"
+                                  : "ns-resize";
+                    }
                     e.preventDefault();
                 }
 
