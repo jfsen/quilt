@@ -51,8 +51,7 @@ That's it — no installation, no server, no dependencies.
 
 | Key | Action |
 |---|---|
-| `←` `→` `↑` `↓` | Nudge crop of the selected cell (1 pixel per step) |
-| `Shift` + arrow keys | Nudge crop by 5 pixels |
+| `←` `→` `↑` `↓` | Nudge crop of the selected cell (5 px per step) |
 | `R` | Reset crop to center for the selected cell |
 | `Escape` | Deselect the active cell |
 
