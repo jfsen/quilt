@@ -918,6 +918,7 @@ JS   (lines 1168–2236)
                         </option>
                         <option value="horizontal">Horizontal Strip</option>
                         <option value="vertical">Vertical Strip</option>
+                        <option value="hero-grid">Hero + Grid</option>
                         <option value="masonry">Masonry</option>
                     </select>
                 </div>
@@ -1370,7 +1371,7 @@ JS   (lines 1168–2236)
         <img class="thumb" src="${img.url}" alt="">
         <div class="info">
           <div class="name">${img.file?.name || "Image " + img.id}</div>
-          <div class="priority-row${state.layout === "equal-grid" || state.layout === "masonry" ? " hidden" : ""}">
+          <div class="priority-row${state.layout === "equal-grid" || state.layout === "masonry" || state.layout === "hero-grid" ? " hidden" : ""}">
             <span style="font-size:10px;color:var(--text2);">P:</span>
             <input type="range" min="1" max="100" value="${img.priority}" class="prio-slider">
             <span class="priority-label">${img.priority}</span>
@@ -1607,6 +1608,8 @@ JS   (lines 1168–2236)
                                 : ch;
                         state.canvasH = computedH;
                         els.canvasH.value = computedH;
+                    } else if (layout === "hero-grid") {
+                        cells = heroGridLayout(n, cw, ch);
                     }
 
                     return cells;
@@ -1688,6 +1691,42 @@ JS   (lines 1168–2236)
                         });
 
                         colHeights[sc] += cellH;
+                    }
+
+                    return cells;
+                }
+
+                // ── 6b2. heroGridLayout — Large hero + compact grid ────────
+                //     Image 0 gets a prominent left-column area (55% of
+                //     canvas width, full height). The remaining images fill
+                //     the right side using bestGrid().
+                function heroGridLayout(n, cw, ch) {
+                    const cells = new Array(n);
+                    if (n === 0) return cells;
+
+                    const heroFrac = 0.55;
+                    const heroW = cw * heroFrac;
+                    const gridW = cw - heroW;
+
+                    // Hero image (index 0) — full height, left side
+                    cells[0] = { x: 0, y: 0, w: heroW, h: ch };
+
+                    // Remaining images — equal grid on the right side
+                    const nRemaining = n - 1;
+                    if (nRemaining > 0) {
+                        const { rows, cols } = bestGrid(nRemaining, gridW, ch);
+                        const cellW = gridW / cols;
+                        const cellH = ch / rows;
+                        for (let i = 0; i < nRemaining; i++) {
+                            const row = Math.floor(i / cols);
+                            const col = i % cols;
+                            cells[i + 1] = {
+                                x: heroW + col * cellW,
+                                y: row * cellH,
+                                w: cellW,
+                                h: cellH,
+                            };
+                        }
                     }
 
                     return cells;
