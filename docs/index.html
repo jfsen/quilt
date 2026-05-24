@@ -257,6 +257,10 @@ JS   (lines 1168–2236)
                 background: rgba(30, 30, 58, 0.9);
             }
 
+            .canvasH-row.hidden {
+                display: none;
+            }
+
             .input-row select {
                 display: none;
             }
@@ -875,7 +879,7 @@ JS   (lines 1168–2236)
                         step="10"
                     />
                 </div>
-                <div class="input-row">
+                <div class="input-row canvasH-row" id="canvasHRow">
                     <label>Height</label>
                     <input
                         type="number"
@@ -914,6 +918,7 @@ JS   (lines 1168–2236)
                         </option>
                         <option value="horizontal">Horizontal Strip</option>
                         <option value="vertical">Vertical Strip</option>
+                        <option value="masonry">Masonry</option>
                     </select>
                 </div>
             </div>
@@ -1184,6 +1189,7 @@ JS   (lines 1168–2236)
                 const els = {
                     canvasW: $("#canvasW"),
                     canvasH: $("#canvasH"),
+                    canvasHRow: $("#canvasHRow"),
                     layoutSelect: $("#layoutSelect"),
                     importBtn: $("#importBtn"),
                     fileInput: $("#fileInput"),
@@ -1275,6 +1281,12 @@ JS   (lines 1168–2236)
                 });
                 els.layoutSelect.addEventListener("change", () => {
                     state.layout = els.layoutSelect.value;
+                    // Show/hide height input (masonry auto-computes height)
+                    if (state.layout === "masonry") {
+                        els.canvasHRow.classList.add("hidden");
+                    } else {
+                        els.canvasHRow.classList.remove("hidden");
+                    }
                     renderImageList();
                     rebuildCollage();
                 });
@@ -1357,7 +1369,7 @@ JS   (lines 1168–2236)
         <img class="thumb" src="${img.url}" alt="">
         <div class="info">
           <div class="name">${img.file?.name || "Image " + img.id}</div>
-          <div class="priority-row${state.layout === "equal-grid" ? " hidden" : ""}">
+          <div class="priority-row${state.layout === "equal-grid" || state.layout === "masonry" ? " hidden" : ""}">
             <span style="font-size:10px;color:var(--text2);">P:</span>
             <input type="range" min="1" max="100" value="${img.priority}" class="prio-slider">
             <span class="priority-label">${img.priority}</span>
@@ -1578,6 +1590,22 @@ JS   (lines 1168–2236)
                         if (cells.length > 0)
                             cells[cells.length - 1].h =
                                 ch - cells[cells.length - 1].y;
+                    } else if (layout === "masonry") {
+                        cells = masonryLayout(n, cw);
+                        // Auto-compute canvas height from content
+                        const computedH =
+                            cells.length > 0
+                                ? Math.max(
+                                      200,
+                                      Math.ceil(
+                                          Math.max(
+                                              ...cells.map((c) => c.y + c.h),
+                                          ),
+                                      ),
+                                  )
+                                : ch;
+                        state.canvasH = computedH;
+                        els.canvasH.value = computedH;
                     }
 
                     return cells;
@@ -1623,6 +1651,45 @@ JS   (lines 1168–2236)
                     }
 
                     return { rows: bestRows, cols: bestCols };
+                }
+
+                // ── 6b1. masonryLayout — Pinterest-style flowing columns ──
+                //     Fixed-width columns, images stacked top-to-bottom
+                //     preserving natural aspect ratios. Each image is placed
+                //     in the shortest column (greedy bin-packing).
+                //     Canvas height is auto-computed from content.
+                function masonryLayout(n, cw) {
+                    // Auto-pick column count: ~√n, with min 1, max n
+                    const cols =
+                        n <= 1
+                            ? 1
+                            : Math.max(2, Math.min(n, Math.ceil(Math.sqrt(n))));
+                    const colWidth = cw / cols;
+                    const colHeights = new Array(cols).fill(0);
+                    const cells = [];
+
+                    for (let i = 0; i < n; i++) {
+                        const img = state.images[i];
+                        const aspect = img.width / Math.max(img.height, 1);
+                        const cellH = colWidth / aspect;
+
+                        // Find shortest column
+                        let sc = 0;
+                        for (let c = 1; c < cols; c++) {
+                            if (colHeights[c] < colHeights[sc]) sc = c;
+                        }
+
+                        cells.push({
+                            x: sc * colWidth,
+                            y: colHeights[sc],
+                            w: colWidth,
+                            h: cellH,
+                        });
+
+                        colHeights[sc] += cellH;
+                    }
+
+                    return cells;
                 }
 
                 // ── 6c. priorityGridLayout — Treemap area distribution ────
@@ -2056,9 +2123,11 @@ JS   (lines 1168–2236)
                     canvas.height = ch;
                     const ctx = canvas.getContext("2d");
 
-                    // Background
-                    ctx.fillStyle = "#111111";
-                    ctx.fillRect(0, 0, cw, ch);
+                    // Background — transparent for PNG, opaque fill for JPEG
+                    if (els.exportFormat.value === "jpeg") {
+                        ctx.fillStyle = "#111111";
+                        ctx.fillRect(0, 0, cw, ch);
+                    }
 
                     // Load and draw all images
                     let loaded = 0;
