@@ -9,15 +9,17 @@
 
 ## Features
 
-- **Multiple Layouts** — Choose from four distinct collage styles:
+- **Multiple Layouts** — Choose from six distinct collage styles:
   - **Equal Grid** — Automatically picks the best-fit grid (rows × columns) based on your images' aspect ratios.
   - **Priority-Weighted Grid** — Uses a squarified treemap algorithm to distribute space proportionally to each image's priority.
   - **Horizontal Strip** — All images in a single row, widths scaled by priority.
   - **Vertical Strip** — All images in a single column, heights scaled by priority.
+  - **Hero + Grid** — The first image takes a large left-column area; the rest fill a compact grid on the right.
+  - **Masonry** — Fixed-width columns with flowing top-to-bottom placement, preserving each image's natural aspect ratio. Canvas height is auto-computed from content.
 - **Priority Sliders** — Fine-tune how much space each image gets in priority-based layouts.
 - **Drag & Drop Reordering** — Rearrange images by dragging them in the sidebar list.
 - **Interactive Cropping** — Click any cell in the collage, then drag to adjust how the image is framed within its cell. Crop hints show which direction is available.
-- **Export at Full Resolution** — Download your collage as **PNG** (lossless) or **JPEG** (smaller file) at the exact canvas dimensions you chose — no resolution limits.
+- **Export at Full Resolution** — Download your collage as **PNG** (lossless, transparent background), **JPG (high quality)**, or **JPG (low quality)** at the exact canvas dimensions you chose — no resolution limits.
 - **Custom Canvas Size** — Set your canvas from 200×200 up to 8000×8000 pixels.
 - **Keyboard Shortcuts** — Fine-tune crops with arrow keys, reset with `R`, deselect with `Escape`.
 
@@ -44,6 +46,8 @@ That's it — no installation, no server, no dependencies.
 | **Priority-Weighted Grid** | Space is divided using a squarified treemap algorithm. Each image's cell area is proportional to its priority value, while preserving the image order and keeping cells as square as possible. |
 | **Horizontal Strip** | All images sit in one horizontal row. Each image's width is proportional to its priority relative to the total. |
 | **Vertical Strip** | All images sit in one vertical column. Each image's height is proportional to its priority. |
+| **Hero + Grid** | The first image occupies the left 55% of the canvas (full height). Remaining images tile the right side using the same algorithm as Equal Grid. Rearrange images to pick which one features as the hero. |
+| **Masonry** | Images are placed into auto-picked columns (2–5 depending on image count), each preserving its natural aspect ratio. Each image goes into the shortest column (greedy bin-packing). Canvas height is auto-computed — set the width, and the height emerges from the content. |
 
 ---
 
@@ -59,8 +63,9 @@ That's it — no installation, no server, no dependencies.
 
 ## Export Format
 
-- **PNG** — Lossless, best for preserving detail and transparency. Default option.
-- **JPEG** — Smaller file size. Best for sharing.
+- **PNG (lossless)** — Best for preserving detail and transparency. Uses high-quality image resampling. Empty areas are left transparent.
+- **JPG (high quality)** — Smaller file size with high-quality resampling and JPEG quality 0.92.
+- **JPG (low quality)** — Smallest file size. Uses standard resampling at JPEG quality 0.65 for quick sharing.
 
 Select your preferred format in the sidebar before downloading.
 
