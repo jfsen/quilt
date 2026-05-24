@@ -957,6 +957,9 @@ JS   (lines 1199–2390)
                             <option value="horizontal">Horizontal Strip</option>
                             <option value="vertical">Vertical Strip</option>
                             <option value="hero-grid">Hero + Grid</option>
+                            <option value="hero-priority">
+                                Hero + Priority
+                            </option>
                             <option value="masonry">Masonry</option>
                         </select>
                     </div>
@@ -1629,6 +1632,8 @@ JS   (lines 1199–2390)
                         els.canvasH.value = computedH;
                     } else if (layout === "hero-grid") {
                         cells = heroGridLayout(n, cw, ch);
+                    } else if (layout === "hero-priority") {
+                        cells = heroPriorityLayout(n, cw, ch);
                     }
 
                     return cells;
@@ -1745,6 +1750,110 @@ JS   (lines 1199–2390)
                                 w: cellW,
                                 h: cellH,
                             };
+                        }
+                    }
+
+                    return cells;
+                }
+
+                // ── 6b3. heroPriorityLayout — Aspect-aware hero + treemap ─
+                //     Image 0 is the hero. Its area equals priority/100 of the
+                //     canvas (independent of other images). The cell's aspect
+                //     ratio is derived from the hero image's natural shape.
+                //     Remaining images fill the right strip (beside the hero)
+                //     and bottom strip (below the hero) using squarify,
+                //     allocated proportionally by region area.
+                function heroPriorityLayout(n, cw, ch) {
+                    const cells = new Array(n);
+                    if (n === 0) return cells;
+                    if (n === 1) {
+                        cells[0] = { x: 0, y: 0, w: cw, h: ch };
+                        return cells;
+                    }
+
+                    const heroP = state.images[0].priority;
+
+                    // Hero area proportional to its slider (heroP / 100 of canvas)
+                    const heroArea = (heroP / 100) * cw * ch;
+                    const img0 = state.images[0];
+                    const heroAspect = img0.width / Math.max(img0.height, 1);
+                    let heroW = Math.sqrt(heroArea * heroAspect);
+                    let heroH = heroArea / heroW;
+                    heroW = Math.min(heroW, cw);
+                    heroH = Math.min(heroH, ch);
+
+                    cells[0] = { x: 0, y: 0, w: heroW, h: heroH };
+
+                    const nRem = n - 1;
+                    if (nRem === 0) return cells;
+
+                    // Two remaining regions: right strip and bottom strip
+                    const rightW = cw - heroW;
+                    const rightH = heroH;
+                    const bottomW = cw;
+                    const bottomH = ch - heroH;
+                    const rightArea = rightW * rightH;
+                    const bottomArea = bottomW * bottomH;
+                    const totalRemArea = rightArea + bottomArea;
+
+                    if (totalRemArea <= 0) return cells;
+
+                    // Allocate remaining images proportionally by region area
+                    const rightCount = Math.max(
+                        0,
+                        Math.min(
+                            nRem,
+                            rightArea > 0
+                                ? Math.round((rightArea / totalRemArea) * nRem)
+                                : 0,
+                        ),
+                    );
+                    const bottomCount = nRem - rightCount;
+
+                    // Right strip — first rightCount images after the hero
+                    if (rightCount > 0 && rightArea > 0) {
+                        const rightImgs = state.images.slice(1, 1 + rightCount);
+                        const rightP = rightImgs.reduce(
+                            (s, img) => s + img.priority,
+                            0,
+                        );
+                        if (rightP > 0) {
+                            squarify(
+                                rightImgs.map((img, i) => ({
+                                    area: (img.priority / rightP) * rightArea,
+                                    idx: 1 + i,
+                                })),
+                                heroW,
+                                0,
+                                rightW,
+                                rightH,
+                                cells,
+                            );
+                        }
+                    }
+
+                    // Bottom strip — remaining images
+                    if (bottomCount > 0 && bottomArea > 0) {
+                        const bottomImgs = state.images.slice(
+                            1 + rightCount,
+                            1 + rightCount + bottomCount,
+                        );
+                        const bottomP = bottomImgs.reduce(
+                            (s, img) => s + img.priority,
+                            0,
+                        );
+                        if (bottomP > 0) {
+                            squarify(
+                                bottomImgs.map((img, i) => ({
+                                    area: (img.priority / bottomP) * bottomArea,
+                                    idx: 1 + rightCount + i,
+                                })),
+                                0,
+                                heroH,
+                                bottomW,
+                                bottomH,
+                                cells,
+                            );
                         }
                     }
 
