@@ -1959,13 +1959,15 @@ JS   (lines 1199–2390)
                         cellEl.appendChild(badge);
 
                         // Crop hint — arrow matches the draggable direction
+                        // Use short form (arrow only) when the cell is too narrow
                         if (Math.abs(imgAspect - cellAspect) > 0.01) {
                             const hint = document.createElement("span");
                             hint.className = "crop-hint";
+                            const arrow = imgAspect > cellAspect ? "↔" : "↕";
                             hint.textContent =
-                                imgAspect > cellAspect
-                                    ? "↔ Drag to adjust crop"
-                                    : "↕ Drag to adjust crop";
+                                cell.w * scale >= 110
+                                    ? arrow + " Drag to adjust crop"
+                                    : arrow;
                             hint.style.display = "none";
                             cellEl.appendChild(hint);
                         }
