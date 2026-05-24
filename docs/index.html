@@ -398,23 +398,6 @@ JS   (lines 1168–2245)
                 }
             }
 
-            .btn-secondary {
-                background: var(--surface2);
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
-                color: var(--text);
-                border: 1px solid var(--border);
-            }
-            .btn-secondary:hover {
-                border-color: var(--border-hover);
-                background: rgba(40, 40, 75, 0.6);
-                transform: translateY(-1px);
-                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-            }
-            .btn-secondary:active {
-                transform: translateY(0);
-            }
-
             .btn-danger {
                 background: transparent;
                 color: var(--danger);
@@ -938,11 +921,8 @@ JS   (lines 1168–2245)
                         stroke-linecap="round"
                         stroke-linejoin="round"
                     >
-                        <path d="M9 2v10" />
-                        <path d="M5 8l4 4 4-4" />
-                        <path
-                            d="M2 13v1.5A1.5 1.5 0 0 0 3.5 16h11a1.5 1.5 0 0 0 1.5-1.5V13"
-                        />
+                        <path d="M9 3v12" />
+                        <path d="M3 9h12" />
                     </svg>
                     Import Images
                 </button>
@@ -1019,7 +999,7 @@ JS   (lines 1168–2245)
                     </select>
                 </div>
                 <button
-                    class="btn btn-secondary btn-block"
+                    class="btn btn-primary btn-block"
                     id="downloadBtn"
                     disabled
                 >
@@ -1293,11 +1273,6 @@ JS   (lines 1168–2245)
                     }
                     renderImageList();
                     rebuildCollage();
-                });
-                els.exportFormat.addEventListener("change", () => {
-                    const fmt = els.exportFormat.value;
-                    const ext = fmt === "png" ? "PNG" : "JPG";
-                    els.downloadBtn.innerHTML = `<svg viewBox="0 0 18 18" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v10"/><path d="M5 8l4 4 4-4"/><path d="M2 13v1.5A1.5 1.5 0 0 0 3.5 16h11a1.5 1.5 0 0 0 1.5-1.5V13"/></svg> Download Collage &middot; ${ext}`;
                 });
 
                 // ── 4a. handleFileImport — Process imported files ──────
@@ -2355,10 +2330,6 @@ JS   (lines 1168–2245)
                 // ── 12. Initialization ───────────────────────────────────
                 renderImageList();
                 rebuildCollage();
-
-                // Sync button text with the selected export format (in case
-                // the browser restored a non-default selection on reload)
-                els.exportFormat.dispatchEvent(new Event("change"));
 
                 // Sync height-row visibility with layout (in case the browser
                 // restored a non-default layout selection on reload)
