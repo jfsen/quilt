@@ -39,35 +39,35 @@ HTML (lines 725–1048)
   HTML-A  Sidebar                     Canvas, Layout, Import, Image list, Footer
   HTML-B  Main Area                   Header, Empty state, Collage container
 
-JS   (lines 1117–2128)
-  JS-1    State & Configuration ................ L1117
-  JS-2    DOM References ....................... L1131
-  JS-3    Input Binding & Event Wiring ......... L1151
+JS   (lines 1168–2236)
+  JS-1    State & Configuration ................ L1168
+  JS-2    DOM References ....................... L1182
+  JS-3    Input Binding & Event Wiring ......... L1202
   JS-4    Image Import & Management
-  JS-4a   handleFileImport ..................... L1177
-  JS-4b   renderImageList ...................... L1215
-  JS-4c   removeImage / removeAllImages ........ L1312
+  JS-4a   handleFileImport ..................... L1285
+  JS-4b   renderImageList ...................... L1323
+  JS-4c   removeImage / removeAllImages ........ L1420
   JS-5    Drag & Drop Reordering
-  JS-5a   Drag Start / End / Over / Drop ....... L1333
+  JS-5a   Drag Start / End / Over / Drop ....... L1441
   JS-6    Layout Calculation Engines
-  JS-6a   computeLayout ........................ L1402
-  JS-6b   bestGrid ............................. L1476
-  JS-6c   priorityGridLayout ................... L1497
-  JS-6d   squarify ............................. L1538
+  JS-6a   computeLayout ........................ L1510
+  JS-6b   bestGrid ............................. L1584
+  JS-6c   priorityGridLayout ................... L1626
+  JS-6d   squarify ............................. L1646
   JS-7    Collage Preview Rendering
-  JS-7a   rebuildCollage ....................... L1617
-  JS-7b   updateImagePosition .................. L1746
-  JS-7c   selectCell ........................... L1782
+  JS-7a   rebuildCollage ....................... L1725
+  JS-7b   updateImagePosition .................. L1875
+  JS-7c   selectCell ........................... L1890
   JS-8    Interactive Crop Dragging
-  JS-8a   startCrop ............................ L1791
-  JS-8b   renderImageListQuick ................. L1911
+  JS-8a   startCrop ............................ L1899
+  JS-8b   renderImageListQuick ................. L2019
   JS-9    High-Resolution Export
-  JS-9a   downloadCollage ...................... L1926
-  JS-10   Keyboard Shortcuts ................... L2057
+  JS-9a   downloadCollage ...................... L2034
+  JS-10   Keyboard Shortcuts ................... L2165
   JS-11   Cleanup & Window Events
-  JS-11a  Re-enable drag after slider .......... L2111
-  JS-11b  Window Resize ........................ L2119
-  JS-12   Initialization ....................... L2124
+  JS-11a  Re-enable drag after slider .......... L2219
+  JS-11b  Window Resize ........................ L2227
+  JS-12   Initialization ....................... L2232
 -->
 <!doctype html>
 <html lang="en">
@@ -258,28 +258,79 @@ JS   (lines 1117–2128)
             }
 
             .input-row select {
+                display: none;
+            }
+
+            /* ── Custom dropdown widgets (replaces native <select>) ─── */
+            .custom-select-wrap {
+                position: relative;
                 flex: 1;
-                appearance: auto;
-                -webkit-appearance: menulist-button;
+            }
+            .custom-select-trigger {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+                padding: 8px 28px 8px 12px;
                 background: var(--surface2);
                 border: 1px solid var(--border);
-                color: var(--text);
-                padding: 8px 12px;
                 border-radius: var(--radius-xs);
+                color: var(--text);
                 font-size: 13px;
                 font-family: inherit;
-                outline: none;
-                transition: border-color var(--transition);
                 cursor: pointer;
+                transition: border-color var(--transition);
+                user-select: none;
+                position: relative;
             }
-
-            .input-row select:hover {
+            .custom-select-trigger:hover {
                 border-color: var(--border-hover);
             }
-
-            .input-row select:focus {
+            .custom-select-trigger.open {
                 border-color: var(--accent2);
                 box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+            }
+            .custom-select-trigger::after {
+                content: "";
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 10px;
+                height: 6px;
+                background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23b4b4d7' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")
+                    no-repeat center;
+                background-size: contain;
+                pointer-events: none;
+            }
+            .custom-select-menu {
+                position: absolute;
+                top: calc(100% + 4px);
+                left: 0;
+                right: 0;
+                background: #1a1a2e;
+                border: 1px solid var(--border);
+                border-radius: var(--radius-xs);
+                z-index: 100;
+                overflow: hidden;
+                display: none;
+                box-shadow: var(--shadow);
+            }
+            .custom-select-menu.open {
+                display: block;
+            }
+            .custom-select-option {
+                padding: 8px 12px;
+                font-size: 13px;
+                color: var(--text);
+                cursor: pointer;
+            }
+            .custom-select-option:hover {
+                background: rgba(99, 102, 241, 0.12);
+            }
+            .custom-select-option.selected {
+                color: var(--accent1);
+                background: rgba(99, 102, 241, 0.15);
             }
 
             /* ── CSS-6: Buttons ─────────────────────────────────────────── */
@@ -1151,6 +1202,63 @@ JS   (lines 1117–2128)
                 };
 
                 // ── 3. Input Binding & Event Wiring ────────────────────
+
+                // Build custom dropdown widgets for all <select> elements
+                function customizeSelect(sel) {
+                    sel.style.display = "none";
+                    var wrap = document.createElement("div");
+                    wrap.className = "custom-select-wrap";
+                    var trigger = document.createElement("div");
+                    trigger.className = "custom-select-trigger";
+                    trigger.textContent = sel.options[sel.selectedIndex].text;
+                    var menu = document.createElement("div");
+                    menu.className = "custom-select-menu";
+                    [].slice.call(sel.options).forEach(function (opt) {
+                        var el = document.createElement("div");
+                        el.className =
+                            "custom-select-option" +
+                            (opt.selected ? " selected" : "");
+                        el.textContent = opt.text;
+                        el.onclick = function () {
+                            sel.value = opt.value;
+                            trigger.textContent = opt.text;
+                            var cur = menu.querySelector(".selected");
+                            if (cur) cur.classList.remove("selected");
+                            el.classList.add("selected");
+                            menu.classList.remove("open");
+                            trigger.classList.remove("open");
+                            sel.dispatchEvent(
+                                new Event("change", { bubbles: true }),
+                            );
+                        };
+                        menu.appendChild(el);
+                    });
+                    trigger.onclick = function (e) {
+                        e.stopPropagation();
+                        menu.classList.toggle("open");
+                        trigger.classList.toggle("open");
+                    };
+                    document.addEventListener(
+                        "click",
+                        function () {
+                            menu.classList.remove("open");
+                            trigger.classList.remove("open");
+                        },
+                        { passive: true },
+                    );
+                    document.addEventListener("keydown", function (e) {
+                        if (e.key === "Escape") {
+                            menu.classList.remove("open");
+                            trigger.classList.remove("open");
+                        }
+                    });
+                    sel.parentNode.insertBefore(wrap, sel);
+                    wrap.appendChild(trigger);
+                    wrap.appendChild(menu);
+                }
+                customizeSelect(els.layoutSelect);
+                customizeSelect(els.exportFormat);
+
                 els.canvasW.addEventListener("input", () => {
                     state.canvasW = Math.max(
                         200,
