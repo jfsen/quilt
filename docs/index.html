@@ -2319,6 +2319,10 @@ JS   (lines 1168–2236)
                 // the browser restored a non-default selection on reload)
                 els.exportFormat.dispatchEvent(new Event("change"));
 
+                // Sync height-row visibility with layout (in case the browser
+                // restored a non-default layout selection on reload)
+                els.layoutSelect.dispatchEvent(new Event("change"));
+
                 console.log("[Quilt] ready!");
                 console.log("  - Import images to get started");
                 console.log("  - Drag & drop to reorder images");
