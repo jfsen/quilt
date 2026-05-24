@@ -188,6 +188,19 @@ JS   (lines 1168–2245)
                 border-bottom: none;
             }
 
+            /* Make the image list section fill available space and scroll internally */
+            .sidebar-section:has(#imageList) {
+                flex: 1;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            .sidebar-section:has(#imageList) h3 {
+                flex-shrink: 0;
+                margin-bottom: 12px;
+            }
+
             .sidebar-section h3 {
                 font-size: 11px;
                 text-transform: uppercase;
@@ -430,6 +443,9 @@ JS   (lines 1168–2245)
                 display: flex;
                 flex-direction: column;
                 gap: 6px;
+                flex: 1;
+                min-height: 0;
+                overflow-y: auto;
             }
 
             .image-item {
