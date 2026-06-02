@@ -1,10 +1,9 @@
 # <img src="favicon.svg" alt="" width="28" height="28" style="vertical-align: -6px; margin-right: 6px"> Quilt
 
+<a href="https://quilt.jfsen.org"><strong>🌐 quilt.jfsen.org</strong></a>
+
 **Create beautiful image collages right in your browser.** Quilt is a single-file, zero-dependency HTML application that lets you arrange images into custom-sized collages with multiple layout algorithms, interactive cropping, and high-resolution export.
 
-<p align="center">
-  <a href="https://quilt.jfsen.org"><strong>🌐 quilt.jfsen.org</strong></a>
-</p>
 
 ![Preview](https://img.shields.io/badge/status-active-brightgreen)
 ![License](https://img.shields.io/badge/license-GPLv3-blue)
