@@ -2,6 +2,8 @@
 
 **Create beautiful image collages right in your browser.** Quilt is a single-file, zero-dependency HTML application that lets you arrange images into custom-sized collages with multiple layout algorithms, interactive cropping, and high-resolution export.
 
+> 🌐 **Try it now: [quilt.jfsen.org](https://quilt.jfsen.org)**
+
 ![Preview](https://img.shields.io/badge/status-active-brightgreen)
 ![License](https://img.shields.io/badge/license-GPLv3-blue)
 
