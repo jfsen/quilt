@@ -20,7 +20,7 @@
 ║  Quilt — Table of Contents                                     ║
 ╚══════════════════════════════════════════════════════════════════╝
 
-CSS (lines 84–889)
+CSS (lines 84–973)
   CSS-1   Custom Properties           :root
   CSS-2   Base Reset & Body           *, body
   CSS-3   Scrollbar                   ::-webkit-scrollbar
@@ -32,44 +32,47 @@ CSS (lines 84–889)
   CSS-9   Collage Preview             .collage-container / .collage-cell / …
   CSS-10  Crop Hint                   .crop-hint
   CSS-11  Empty State                 .empty-state
+  CSS-11b Drop Zone Overlay           .drop-zone
   CSS-12  Scale Info                  .scale-info
   CSS-13  Responsive                  @media (max-width: 768px)
 
-HTML (lines 893–1196)
+HTML (lines 976–1315)
   HTML-A  Sidebar                     Settings, Import, Image list, Download
-  HTML-B  Main Area                   Header, Empty state, Collage container
+  HTML-B  Main Area                   Header, Drop zone, Empty state, Collage container
 
-JS   (lines 1199–2390)
-  JS-1    State & Configuration ................ L1207
-  JS-2    DOM References ....................... L1220
-  JS-3    Input Binding & Event Wiring ......... L1236
+JS   (lines 1319–2618)
+  JS-1    State & Configuration ................ L1327
+  JS-2    DOM References ....................... L1340
+  JS-3    Input Binding & Event Wiring ......... L1362
   JS-4    Image Import & Management
-  JS-4a   handleFileImport ..................... L1320
-  JS-4b   renderImageList ...................... L1358
-  JS-4c   removeImage / removeAllImages ........ L1455
-  JS-5    Drag & Drop Reordering
-  JS-5a   Drag Start / End / Over / Drop ....... L1476
-  JS-6    Layout Calculation Engines
-  JS-6a   computeLayout ........................ L1546
-  JS-6b   bestGrid ............................. L1641
-  JS-6b1  masonryLayout ........................ L1684
-  JS-6b2  heroGridLayout ....................... L1722
-  JS-6c   priorityGridLayout ................... L1757
-  JS-6d   squarify ............................. L1779
-  JS-7    Collage Preview Rendering
-  JS-7a   rebuildCollage ....................... L1854
-  JS-7b   updateImagePosition .................. L2004
-  JS-7c   selectCell ........................... L2019
-  JS-8    Interactive Crop Dragging
-  JS-8a   startCrop ............................ L2032
-  JS-8b   renderImageListQuick ................. L2151
-  JS-9    High-Resolution Export
-  JS-9a   downloadCollage ...................... L2165
-  JS-10   Keyboard Shortcuts ................... L2305
-  JS-11   Cleanup & Window Events
-  JS-11a  Re-enable drag after slider .......... L2359
-  JS-11b  Window Resize ........................ L2367
-  JS-12   Initialization ....................... L2372
+  JS-4a   processFiles ......................... L1457
+  JS-4b   File Import Button ................... L1481
+  JS-4c   Drag & Drop Image Import ............. L1491
+  JS-5    renderImageList ...................... L1552
+  JS-6    removeImage / removeAllImages ........ L1649
+  JS-7    Drag & Drop Reordering
+  JS-7a   Drag Start / End / Over / Drop ....... L1670
+  JS-8    Layout Calculation Engines
+  JS-8a   computeLayout ........................ L1741
+  JS-8b   bestGrid ............................. L1836
+  JS-8b1  masonryLayout ........................ L1879
+  JS-8b2  heroGridLayout ....................... L1917
+  JS-8c   priorityGridLayout ................... L1952
+  JS-8d   squarify ............................. L1974
+  JS-9    Collage Preview Rendering
+  JS-9a   rebuildCollage ....................... L2049
+  JS-9b   updateImagePosition .................. L2209
+  JS-9c   selectCell ........................... L2224
+  JS-10   Interactive Crop Dragging
+  JS-10a  startCrop ............................ L2237
+  JS-10b  renderImageListQuick ................. L2356
+  JS-11   High-Resolution Export
+  JS-11a  downloadCollage ...................... L2380
+  JS-12   Keyboard Shortcuts ................... L2520
+  JS-13   Cleanup & Window Events
+  JS-13a  Re-enable drag after slider .......... L2574
+  JS-13b  Window Resize ........................ L2582
+  JS-14   Initialization ....................... L2587
 -->
 <!doctype html>
 <html lang="en">
@@ -853,6 +856,99 @@ JS   (lines 1199–2390)
                 font-weight: 400;
             }
 
+            /* ── CSS-11b: Drop Zone Overlay ──────────────────────────── */
+            .drop-zone {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 16px;
+                z-index: 20;
+                pointer-events: none;
+                visibility: hidden;
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                opacity: 0;
+                transform: scale(0.96);
+                transition:
+                    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .drop-zone.active {
+                visibility: visible;
+                opacity: 1;
+                transform: scale(1);
+            }
+            .drop-zone::before {
+                content: "";
+                position: absolute;
+                inset: 20px;
+                border-radius: 20px;
+                border: 2px dashed rgba(99, 102, 241, 0.35);
+                background: rgba(99, 102, 241, 0.04);
+                box-shadow:
+                    0 0 60px rgba(99, 102, 241, 0.08),
+                    inset 0 0 60px rgba(99, 102, 241, 0.04);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .drop-zone.active::before {
+                border-color: rgba(99, 102, 241, 0.6);
+                background: rgba(99, 102, 241, 0.08);
+                box-shadow:
+                    0 0 80px rgba(99, 102, 241, 0.15),
+                    inset 0 0 80px rgba(99, 102, 241, 0.06);
+            }
+            .drop-zone .drop-icon {
+                position: relative;
+                z-index: 1;
+                width: 64px;
+                height: 64px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .drop-zone.active .drop-icon {
+                transform: translateY(-6px);
+                animation: dropPulse 1.6s ease-in-out infinite;
+            }
+            .drop-zone .drop-icon svg {
+                width: 52px;
+                height: 52px;
+                opacity: 0.5;
+                transition: opacity 0.3s ease;
+            }
+            .drop-zone.active .drop-icon svg {
+                opacity: 0.85;
+            }
+            .drop-zone .drop-text {
+                position: relative;
+                z-index: 1;
+                font-size: 16px;
+                font-weight: 600;
+                color: rgba(255, 255, 255, 0.8);
+                letter-spacing: 0.3px;
+            }
+            .drop-zone .drop-sub {
+                position: relative;
+                z-index: 1;
+                font-size: 12px;
+                color: rgba(180, 180, 215, 0.5);
+                font-weight: 400;
+            }
+
+            @keyframes dropPulse {
+                0%,
+                100% {
+                    transform: translateY(-6px);
+                }
+                50% {
+                    transform: translateY(-12px);
+                }
+            }
+
             /* ── CSS-12: Scale Info ─────────────────────────────────────── */
             .scale-info {
                 position: absolute;
@@ -1123,6 +1219,44 @@ JS   (lines 1199–2390)
             <div class="main-header" id="mainHeader" style="display: none">
                 Preview <span id="scaleLabel"></span>
             </div>
+            <!-- Drop Zone Overlay -->
+            <div class="drop-zone" id="dropZone">
+                <div class="drop-icon">
+                    <svg
+                        viewBox="0 0 64 64"
+                        fill="none"
+                        stroke="url(#dropGrad)"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <defs>
+                            <linearGradient
+                                id="dropGrad"
+                                x1="0"
+                                y1="0"
+                                x2="64"
+                                y2="64"
+                            >
+                                <stop offset="0%" stop-color="#6366f1" />
+                                <stop offset="100%" stop-color="#06b6d4" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M32 8v30" stroke-width="2" />
+                        <path d="M22 28l10 10 10-10" stroke-width="2" />
+                        <rect
+                            x="12"
+                            y="42"
+                            width="40"
+                            height="14"
+                            rx="3"
+                            opacity="0.45"
+                        />
+                    </svg>
+                </div>
+                <span class="drop-text">Drop images here</span>
+                <span class="drop-sub">JPEG · PNG · WebP · GIF · SVG</span>
+            </div>
             <div class="empty-state" id="emptyState">
                 <div class="icon">
                     <svg
@@ -1186,7 +1320,7 @@ JS   (lines 1199–2390)
                     </svg>
                 </div>
                 <p>Collage Preview</p>
-                <p class="sub">Import images to see your collage here</p>
+                <p class="sub">Import images or drag &amp; drop them here</p>
             </div>
             <div
                 class="collage-container"
@@ -1234,6 +1368,7 @@ JS   (lines 1199–2390)
                     scaleLabel: $("#scaleLabel"),
                     scaleInfo: $("#scaleInfo"),
                     exportFormat: $("#exportFormat"),
+                    dropZone: $("#dropZone"),
                 };
 
                 // ── 3. Input Binding & Event Wiring ────────────────────
@@ -1320,18 +1455,12 @@ JS   (lines 1199–2390)
                     rebuildCollage();
                 });
 
-                // ── 4a. handleFileImport — Process imported files ──────
-                els.importBtn.addEventListener("click", () =>
-                    els.fileInput.click(),
-                );
-                els.clearAllBtn.addEventListener("click", removeAllImages);
-                els.fileInput.addEventListener("change", handleFileImport);
+                // ── 4a. processFiles — Shared file processing ──────────
+                function processFiles(files) {
+                    const fileList = Array.from(files);
+                    if (fileList.length === 0) return;
 
-                function handleFileImport(e) {
-                    const files = Array.from(e.target.files);
-                    if (files.length === 0) return;
-
-                    files.forEach((file) => {
+                    fileList.forEach((file) => {
                         if (!file.type.startsWith("image/")) return;
                         const url = URL.createObjectURL(file);
                         const img = new Image();
@@ -1343,8 +1472,8 @@ JS   (lines 1199–2390)
                                 width: img.naturalWidth,
                                 height: img.naturalHeight,
                                 priority: 50,
-                                cropX: 50, // percentage 0-100
-                                cropY: 50, // percentage 0-100
+                                cropX: 50,
+                                cropY: 50,
                             });
                             renderImageList();
                             rebuildCollage();
@@ -1354,9 +1483,69 @@ JS   (lines 1199–2390)
                         };
                         img.src = url;
                     });
-
-                    els.fileInput.value = "";
                 }
+
+                // ── 4b. File Import Button ──────────────────────────
+                els.importBtn.addEventListener("click", () =>
+                    els.fileInput.click(),
+                );
+                els.clearAllBtn.addEventListener("click", removeAllImages);
+                els.fileInput.addEventListener("change", (e) => {
+                    processFiles(e.target.files);
+                    els.fileInput.value = "";
+                });
+
+                // ── 4c. Drag & Drop Image Import ─────────────────────
+                let dragCounter = 0;
+
+                function showDropZone() {
+                    els.dropZone.classList.add("active");
+                }
+
+                function hideDropZone() {
+                    els.dropZone.classList.remove("active");
+                }
+
+                function isFileDrag(e) {
+                    return (
+                        e.dataTransfer &&
+                        e.dataTransfer.types &&
+                        Array.from(e.dataTransfer.types).includes("Files")
+                    );
+                }
+
+                document.addEventListener("dragenter", (e) => {
+                    if (!isFileDrag(e)) return;
+                    e.preventDefault();
+                    dragCounter++;
+                    if (dragCounter === 1) showDropZone();
+                });
+
+                document.addEventListener("dragleave", (e) => {
+                    if (!isFileDrag(e)) return;
+                    e.preventDefault();
+                    dragCounter--;
+                    if (dragCounter <= 0) {
+                        dragCounter = 0;
+                        hideDropZone();
+                    }
+                });
+
+                document.addEventListener("dragover", (e) => {
+                    if (!isFileDrag(e)) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "copy";
+                });
+
+                document.addEventListener("drop", (e) => {
+                    if (!isFileDrag(e)) return;
+                    e.preventDefault();
+                    dragCounter = 0;
+                    hideDropZone();
+                    if (e.dataTransfer.files.length > 0) {
+                        processFiles(e.dataTransfer.files);
+                    }
+                });
 
                 // ── 4b. renderImageList — Build the sidebar image list ──
                 function renderImageList() {
