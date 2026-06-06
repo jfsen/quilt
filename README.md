@@ -23,7 +23,7 @@
 - **Interactive Cropping** — Click any cell in the collage, then drag to adjust how the image is framed within its cell. Crop hints show which direction is available.
 - **Export at Full Resolution** — Download your collage as **PNG** (lossless, transparent background), **JPG (high quality)**, or **JPG (low quality)** at the exact canvas dimensions you chose — no resolution limits.
 - **Custom Canvas Size** — Set your canvas from 200×200 up to 8000×8000 pixels.
-- **Keyboard Shortcuts** — Fine-tune crops with arrow keys, reset with `R`, deselect with `Escape`.
+- **Keyboard Shortcuts** — Fine-tune crops with arrow keys, reset crop and priority with `R`, deselect with `Escape`.
 
 ---
 
@@ -59,7 +59,7 @@ That's it — no installation, no server, no dependencies.
 | Key | Action |
 |---|---|
 | `←` `→` `↑` `↓` | Nudge crop of the selected cell (5 px per step) |
-| `R` | Reset crop to center for the selected cell |
+| `R` | Reset crop to center and priority to default (50) for the selected cell |
 | `Escape` | Deselect the active cell |
 
 ---

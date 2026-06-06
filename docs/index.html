@@ -70,9 +70,9 @@ JS   (lines 1319–2618)
   JS-11a  downloadCollage ...................... L2380
   JS-12   Keyboard Shortcuts ................... L2520
   JS-13   Cleanup & Window Events
-  JS-13a  Re-enable drag after slider .......... L2574
-  JS-13b  Window Resize ........................ L2582
-  JS-14   Initialization ....................... L2587
+  JS-13a  Re-enable drag after slider .......... L2576
+  JS-13b  Window Resize ........................ L2584
+  JS-14   Initialization ....................... L2589
 -->
 <!doctype html>
 <html lang="en">
@@ -2650,7 +2650,9 @@ JS   (lines 1319–2618)
                         if (e.key === "r" || e.key === "R") {
                             img.cropX = 50;
                             img.cropY = 50;
+                            img.priority = 50;
                             rebuildCollage();
+                            renderImageList();
                             e.preventDefault();
                         }
                     }
