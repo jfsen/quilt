@@ -20,7 +20,14 @@
 ║  Quilt — Table of Contents                                     ║
 ╚══════════════════════════════════════════════════════════════════╝
 
-CSS (lines 84–973)
+HEAD (lines 80–115)
+  HEAD-A  Charset & Viewport               meta tags
+  HEAD-B  Favicon                          inline SVG icon
+  HEAD-C  Title & Description               Quilt • Collage Generator
+  HEAD-D  Open Graph / Social Cards         og: / twitter: meta tags
+  HEAD-E  CSS begins at line 117
+
+CSS (lines 117–1017)
   CSS-1   Custom Properties           :root
   CSS-2   Base Reset & Body           *, body
   CSS-3   Scrollbar                   ::-webkit-scrollbar
@@ -36,43 +43,44 @@ CSS (lines 84–973)
   CSS-12  Scale Info                  .scale-info
   CSS-13  Responsive                  @media (max-width: 768px)
 
-HTML (lines 976–1315)
+HTML (lines 1021–1364)
   HTML-A  Sidebar                     Settings, Import, Image list, Download
   HTML-B  Main Area                   Header, Drop zone, Empty state, Collage container
 
-JS   (lines 1319–2618)
-  JS-1    State & Configuration ................ L1327
-  JS-2    DOM References ....................... L1340
-  JS-3    Input Binding & Event Wiring ......... L1362
+JS   (lines 1372–2730)
+  JS-1    State ................................. L1374
+  JS-2    DOM References ........................ L1385
+  JS-3    Input Binding & Event Wiring .......... L1411
   JS-4    Image Import & Management
-  JS-4a   processFiles ......................... L1457
-  JS-4b   File Import Button ................... L1481
-  JS-4c   Drag & Drop Image Import ............. L1491
-  JS-5    renderImageList ...................... L1552
-  JS-6    removeImage / removeAllImages ........ L1649
-  JS-7    Drag & Drop Reordering
-  JS-7a   Drag Start / End / Over / Drop ....... L1670
-  JS-8    Layout Calculation Engines
-  JS-8a   computeLayout ........................ L1741
-  JS-8b   bestGrid ............................. L1836
-  JS-8b1  masonryLayout ........................ L1879
-  JS-8b2  heroGridLayout ....................... L1917
-  JS-8c   priorityGridLayout ................... L1952
-  JS-8d   squarify ............................. L1974
-  JS-9    Collage Preview Rendering
-  JS-9a   rebuildCollage ....................... L2049
-  JS-9b   updateImagePosition .................. L2209
-  JS-9c   selectCell ........................... L2224
-  JS-10   Interactive Crop Dragging
-  JS-10a  startCrop ............................ L2237
-  JS-10b  renderImageListQuick ................. L2356
-  JS-11   High-Resolution Export
-  JS-11a  downloadCollage ...................... L2380
-  JS-12   Keyboard Shortcuts ................... L2520
-  JS-13   Cleanup & Window Events
-  JS-13a  Re-enable drag after slider .......... L2576
-  JS-13b  Window Resize ........................ L2584
-  JS-14   Initialization ....................... L2589
+  JS-4a   processFiles .......................... L1495
+  JS-4b   File Import Button .................... L1525
+  JS-4c   Drag & Drop Image Import .............. L1535
+  JS-4b   renderImageList ....................... L1587
+  JS-4c   removeImage / removeAllImages ......... L1684
+  JS-5    Drag & Drop Reordering
+  JS-5a   Drag Start / End / Over / Drop ........ L1705
+  JS-6    Layout Calculation Engines
+  JS-6a   computeLayout ......................... L1774
+  JS-6b   bestGrid (rows × columns) ............. L1868
+  JS-6b1  masonryLayout ......................... L1910
+  JS-6b2  heroGridLayout ........................ L1949
+  JS-6b3  heroPriorityLayout .................... L1985
+  JS-6c   priorityGridLayout (treemap) .......... L2089
+  JS-6d   squarify (recursive treemap) .......... L2109
+  JS-7    Collage Preview Rendering
+  JS-7a   rebuildCollage ........................ L2188
+  JS-7b   updateImagePosition ................... L2340
+  JS-7c   selectCell ............................ L2355
+  JS-8    Interactive Crop Dragging
+  JS-8a   startCrop (mouse/touch) ............... L2364
+  JS-8b   renderImageListQuick .................. L2484
+  JS-9    High-Resolution Export
+  JS-9a   downloadCollage ....................... L2499
+  JS-10   Keyboard Shortcuts .................... L2642
+  JS-11   Cleanup & Window Events
+  JS-11a  Re-enable drag after slider ........... L2698
+  JS-11b  Window Resize ......................... L2706
+  JS-12   Initialization ........................ L2711
 -->
 <!doctype html>
 <html lang="en">
@@ -84,6 +92,36 @@ JS   (lines 1319–2618)
             href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='0' y='0' width='7' height='7' rx='1' fill='url(%23g)'/%3E%3Crect x='9' y='0' width='7' height='7' rx='1' fill='url(%23g)' opacity='0.6'/%3E%3Crect x='0' y='9' width='7' height='7' rx='1' fill='url(%23g)' opacity='0.3'/%3E%3Crect x='9' y='9' width='7' height='7' rx='1' fill='url(%23g)' opacity='0.8'/%3E%3C/svg%3E"
         />
         <title>Quilt • Collage Generator</title>
+        <meta
+            name="description"
+            content="Create beautiful image collages right in your browser. Drag & drop, resize, crop, and export at full resolution — zero dependencies."
+        />
+
+        <!-- Open Graph / Social Cards -->
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Quilt • Collage Generator" />
+        <meta
+            property="og:description"
+            content="Create beautiful image collages right in your browser. Drag & drop, resize, crop, and export at full resolution."
+        />
+        <meta
+            property="og:image"
+            content="https://quilt.jfsen.org/images/og-image.png"
+        />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:url" content="https://quilt.jfsen.org" />
+        <meta property="og:site_name" content="Quilt" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Quilt • Collage Generator" />
+        <meta
+            name="twitter:description"
+            content="Create beautiful image collages right in your browser."
+        />
+        <meta
+            name="twitter:image"
+            content="https://quilt.jfsen.org/images/og-image.png"
+        />
         <style>
             /* ── CSS-1: Custom Properties ─────────────────────────────── */
             :root {
