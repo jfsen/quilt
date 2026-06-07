@@ -4,7 +4,7 @@
 
 
 ![Preview](https://img.shields.io/badge/status-active-brightgreen)
-![License](https://img.shields.io/badge/license-GPLv3-blue)
+![License](https://img.shields.io/badge/license-AGPLv3-blue)
 
 ---
 
@@ -84,4 +84,4 @@ Works in all modern browsers (Chrome, Firefox, Safari, Edge).
 
 ## License
 
-This project is licensed under the **GNU General Public License v3**. See [LICENSE](LICENSE) for details.
+This project is licensed under the **GNU Affero General Public License v3**. See [LICENSE](LICENSE) for details.
